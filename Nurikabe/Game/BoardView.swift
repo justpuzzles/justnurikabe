@@ -1,0 +1,160 @@
+import SwiftUI
+
+/// What to draw over the chart. Everything is flat cell indices.
+struct BoardOverlay: Equatable {
+    /// Ochre wash: the region an argument is about.
+    var region: Set<Int> = []
+    /// Ochre outline: the cells the player should decide.
+    var targets: Set<Int> = []
+    /// Vermilion outline: wrong marks, or cells of a contradiction.
+    var errors: Set<Int> = []
+    /// Vermilion wash: cells of a broken rule (pools, merged islands).
+    var broken: Set<Int> = []
+    /// whatIf: the cell being supposed, drawn with a question ring.
+    var trial: Int? = nil
+
+    static let none = BoardOverlay()
+}
+
+enum StrokeEvent: Equatable {
+    case begin(Int)
+    case extend(Int)
+    case end
+}
+
+/// The chart. One Canvas for the drawing, one gesture for input; the parent
+/// decides what a stroke means.
+struct BoardView: View {
+    let puzzle: Puzzle
+    let marks: [Mark]
+    var overlay: BoardOverlay = .none
+    /// Clue indices whose island is complete and correct (numeral relaxes).
+    var satisfiedClues: Set<Int> = []
+    var interactive: Bool = true
+    var onStroke: (StrokeEvent) -> Void = { _ in }
+
+    @State private var lastIndex: Int?
+
+    var body: some View {
+        GeometryReader { geo in
+            let side = min(geo.size.width, geo.size.height)
+            let cell = side / CGFloat(puzzle.size)
+            Canvas { context, _ in
+                draw(in: &context, cell: cell)
+            }
+            .frame(width: side, height: side)
+            .contentShape(Rectangle())
+            .gesture(interactive ? strokeGesture(cell: cell) : nil)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilitySummary)
+        .accessibilityIdentifier("board")
+    }
+
+    // MARK: Input
+
+    private func strokeGesture(cell: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .onChanged { value in
+                guard let index = index(at: value.location, cell: cell) else { return }
+                if lastIndex == nil {
+                    lastIndex = index
+                    onStroke(.begin(index))
+                } else if index != lastIndex {
+                    lastIndex = index
+                    onStroke(.extend(index))
+                }
+            }
+            .onEnded { _ in
+                if lastIndex != nil { onStroke(.end) }
+                lastIndex = nil
+            }
+    }
+
+    private func index(at point: CGPoint, cell: CGFloat) -> Int? {
+        let c = Int(point.x / cell), r = Int(point.y / cell)
+        guard r >= 0, c >= 0, r < puzzle.size, c < puzzle.size else { return nil }
+        return r * puzzle.size + c
+    }
+
+    // MARK: Drawing
+
+    private func draw(in context: inout GraphicsContext, cell: CGFloat) {
+        let n = puzzle.size
+        let clueAt = puzzle.clueIndexAt
+        func rect(_ i: Int) -> CGRect {
+            CGRect(x: CGFloat(i % n) * cell, y: CGFloat(i / n) * cell, width: cell, height: cell)
+        }
+        let full = CGRect(x: 0, y: 0, width: cell * CGFloat(n), height: cell * CGFloat(n))
+
+        // Paper, then sea.
+        context.fill(Path(full), with: .color(Theme.land))
+        for i in marks.indices where marks[i] == .sea {
+            context.fill(Path(rect(i)), with: .color(Theme.sea))
+        }
+
+        // Washes: broken rules, then the argument's region.
+        for i in overlay.broken {
+            context.fill(Path(rect(i)), with: .color(Theme.errorWash))
+        }
+        for i in overlay.region {
+            context.fill(Path(rect(i)), with: .color(Theme.ochreWash))
+        }
+
+        // Grid.
+        var lines = Path()
+        for k in 1..<n {
+            let p = CGFloat(k) * cell
+            lines.move(to: CGPoint(x: p, y: 0)); lines.addLine(to: CGPoint(x: p, y: full.maxY))
+            lines.move(to: CGPoint(x: 0, y: p)); lines.addLine(to: CGPoint(x: full.maxX, y: p))
+        }
+        context.stroke(lines, with: .color(Theme.grid), lineWidth: 1)
+
+        // Dots and numerals.
+        let dotRadius = max(2.5, cell * 0.08)
+        for i in marks.indices {
+            let r = rect(i)
+            if clueAt[i] >= 0 {
+                let k = clueAt[i]
+                let text = Text("\(puzzle.clues[k].value)")
+                    .font(Theme.clueFont(size: cell * 0.52))
+                    .foregroundStyle(satisfiedClues.contains(k) ? Theme.numeralDone : Theme.numeral)
+                context.draw(text, at: CGPoint(x: r.midX, y: r.midY))
+            } else if marks[i] == .land {
+                let dot = CGRect(x: r.midX - dotRadius, y: r.midY - dotRadius,
+                                 width: dotRadius * 2, height: dotRadius * 2)
+                context.fill(Path(ellipseIn: dot), with: .color(Theme.numeral))
+            }
+        }
+
+        // Outlines: targets in ochre, errors in vermilion, the trial cell ringed.
+        let inset = max(1.5, cell * 0.06)
+        for i in overlay.targets {
+            let r = rect(i).insetBy(dx: inset, dy: inset)
+            context.stroke(Path(roundedRect: r, cornerRadius: cell * 0.12),
+                           with: .color(Theme.ochre), lineWidth: max(2, cell * 0.07))
+        }
+        for i in overlay.errors {
+            let r = rect(i).insetBy(dx: inset, dy: inset)
+            context.stroke(Path(roundedRect: r, cornerRadius: cell * 0.12),
+                           with: .color(Theme.error), lineWidth: max(2, cell * 0.07))
+        }
+        if let t = overlay.trial {
+            let r = rect(t).insetBy(dx: cell * 0.22, dy: cell * 0.22)
+            context.stroke(Path(ellipseIn: r), with: .color(Theme.ochre),
+                           style: StrokeStyle(lineWidth: max(2, cell * 0.06), dash: [cell * 0.08, cell * 0.06]))
+        }
+
+        // Frame.
+        context.stroke(Path(full.insetBy(dx: 1, dy: 1)), with: .color(Theme.sea), lineWidth: 2)
+    }
+
+    private var accessibilitySummary: String {
+        let sea = marks.filter { $0 == .sea }.count
+        let dots = marks.indices.filter { marks[$0] == .land && puzzle.clueIndexAt[$0] < 0 }.count
+        let blank = marks.filter { $0 == .unknown }.count
+        return "\(puzzle.size) by \(puzzle.size) board, \(puzzle.clues.count) numbers, \(sea) sea cells, \(dots) dots, \(blank) blank."
+    }
+}

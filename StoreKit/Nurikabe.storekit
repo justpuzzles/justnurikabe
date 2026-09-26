@@ -1,0 +1,34 @@
+{
+  "identifier" : "4C2D8E11",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : true,
+      "internalID" : "9A61C3F2",
+      "localizations" : [
+        {
+          "description" : "The four advanced lessons, 10x10 boards, and hints that name and draw the argument during games.",
+          "displayName" : "The Full Chart",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "de.kaikunze.nurikabe.full",
+      "referenceName" : "Nurikabe Full",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_developerTeamID" : "8H42EZRCCP",
+    "_lastSynchronizedDate" : 0
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
