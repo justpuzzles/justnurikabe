@@ -18,6 +18,9 @@ final class NurikabeGame {
     /// Rule breaks no further marking can repair (pools, two numbers in one
     /// island, a cut-off sea, an island too big or boxed in).
     private(set) var ruleBreaks: [Rules.Violation] = []
+    /// Clue indices whose island is complete and exactly its size, computed
+    /// once per change (the board re-renders far more often than it changes).
+    private(set) var satisfiedClues: Set<Int> = []
     private(set) var hint: HintState?
 
     private var undoStack: [[Mark]] = []
@@ -158,18 +161,7 @@ final class NurikabeGame {
         }
     }
 
-    /// Cells of the island a clue belongs to, when that island is complete
-    /// and exactly the right size (its numeral relaxes).
-    func isClueSatisfied(_ clueIndex: Int) -> Bool {
-        let groups = Groups(marks: marks, grid: grid, clueIndexAt: context.clueAt)
-        let cell = grid.index(puzzle.clues[clueIndex].cell)
-        let g = groups.landGroupOf[cell]
-        guard g >= 0 else { return false }
-        let group = groups.land[g]
-        return group.clueIndices == [clueIndex]
-            && group.cells.count == puzzle.clues[clueIndex].value
-            && group.liberties.isEmpty
-    }
+    func isClueSatisfied(_ clueIndex: Int) -> Bool { satisfiedClues.contains(clueIndex) }
 
     private func changed() {
         hint = nil
@@ -179,6 +171,18 @@ final class NurikabeGame {
     private func refresh() {
         isSolved = Rules.isSolved(marks, puzzle: puzzle)
         ruleBreaks = Rules.violations(marks, puzzle: puzzle, requireComplete: false)
+        let groups = Groups(marks: marks, grid: grid, clueIndexAt: context.clueAt)
+        satisfiedClues = Set(puzzle.clues.indices.filter { k in
+            let g = groups.landGroupOf[grid.index(puzzle.clues[k].cell)]
+            guard g >= 0 else { return false }
+            let group = groups.land[g]
+            return group.clueIndices == [k] && group.cells.count == puzzle.clues[k].value
+                && group.liberties.isEmpty
+        })
+        // Stop the clock here, not in the input paths: the tap that solves
+        // the board also removes its gesture, so the stroke's end event may
+        // never arrive.
+        if isSolved { pauseClock() }
     }
 
     // MARK: Hints

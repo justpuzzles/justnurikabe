@@ -7,7 +7,9 @@ import Observation
 final class PuzzleCache {
 
     private var ready: [String: GenerationResult] = [:]
-    private var inFlight: Set<String> = []
+    /// Prefetches still running; `board` awaits one rather than starting a
+    /// second generation for the same slot.
+    private var inFlight: [String: Task<GenerationResult, Never>] = [:]
 
     private static func key(_ size: BoardSize, _ tier: Difficulty) -> String {
         "\(size.rawValue)-\(tier.rawValue)"
@@ -21,6 +23,12 @@ final class PuzzleCache {
             prefetch(size: size, tier: tier)
             return hit
         }
+        if let running = inFlight[key] {
+            let result = await running.value
+            ready[key] = nil        // claimed here, not left for the next caller
+            prefetch(size: size, tier: tier)
+            return result
+        }
         let result = await Self.generate(size: size, tier: tier, seed: UInt64.random(in: .min ... .max))
         prefetch(size: size, tier: tier)
         return result
@@ -28,13 +36,14 @@ final class PuzzleCache {
 
     func prefetch(size: BoardSize, tier: Difficulty) {
         let key = Self.key(size, tier)
-        guard ready[key] == nil, !inFlight.contains(key) else { return }
-        inFlight.insert(key)
-        Task {
+        guard ready[key] == nil, inFlight[key] == nil else { return }
+        let task = Task {
             let result = await Self.generate(size: size, tier: tier, seed: UInt64.random(in: .min ... .max))
             ready[key] = result
-            inFlight.remove(key)
+            inFlight[key] = nil
+            return result
         }
+        inFlight[key] = task
     }
 
     // MARK: Off-main generation

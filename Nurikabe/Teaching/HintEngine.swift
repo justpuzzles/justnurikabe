@@ -29,7 +29,8 @@ nonisolated enum HintState: Equatable, Sendable {
     /// step, and a mistakes check. Climbing the same step's ladder is free.
     func countsAsHint(comparedTo previous: HintState?) -> Bool {
         switch self {
-        case .mistakes: return true
+        // The same mistakes list shown again is not new help.
+        case .mistakes: return self != previous
         case .nudge: return previous?.step != step
         default: return false
         }

@@ -22,6 +22,19 @@ struct SettingsView: View {
                 } else {
                     Button("Unlock the full game") { paywall.present(.advancedLessons) }
                     Button("Restore purchase") { Task { await entitlements.restore() } }
+                        .disabled(entitlements.purchaseState.isBusy)
+                    switch entitlements.purchaseState {
+                    case .restoring, .loadingProduct, .purchasing:
+                        ProgressView()
+                    case .note(let text):
+                        Text(text).font(.footnote).foregroundStyle(Theme.textSoft)
+                    case .failed(let text):
+                        Text(text).font(.footnote).foregroundStyle(Theme.error)
+                    case .awaitingApproval:
+                        Text("Waiting for approval.").font(.footnote).foregroundStyle(Theme.textSoft)
+                    case .idle:
+                        EmptyView()
+                    }
                 }
             }
             Section("About") {
@@ -34,5 +47,6 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.ground.ignoresSafeArea())
         .navigationTitle("Settings")
+        .onAppear { entitlements.clearTransientState() }
     }
 }

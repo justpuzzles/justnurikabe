@@ -41,6 +41,7 @@ struct LessonBoardView: View {
                     strokeMark = nil
                     if case .wrong = session.feedback { Haptics.warn() }
                     if session.isDone { Haptics.success() }
+                    if session.pending != nil { settleSoon() }
                 }
             }
             .frame(maxWidth: 330)
@@ -48,7 +49,7 @@ struct LessonBoardView: View {
             .animation(Motion.mark, value: session.marks)
             .id(LessonAnchor.board)
 
-            if showArgument || hintShown || session.isDone, let step = session.position.step {
+            if showArgument || hintShown || session.isDone, let step = session.step {
                 Text(TechniqueContent.argument(step, puzzle: session.position.puzzle))
                     .font(.callout)
                     .foregroundStyle(Theme.text)
@@ -94,6 +95,18 @@ struct LessonBoardView: View {
         }
     }
 
+    /// A sea on a land target is judged only if it survives this long, so a
+    /// player tapping through sea to the dot is not told off on the way.
+    private func settleSoon() {
+        let before = session.marks
+        Task {
+            try? await Task.sleep(for: .milliseconds(900))
+            guard session.marks == before else { return }
+            session.settle()
+            if case .wrong = session.feedback { Haptics.warn() }
+        }
+    }
+
     private var helpButtons: some View {
         HStack(spacing: 16) {
             if !showArgument && !hintShown {
@@ -108,7 +121,7 @@ struct LessonBoardView: View {
     private var overlay: BoardOverlay {
         var o = BoardOverlay()
         o.targets = session.isDone ? [] : session.targets
-        if showArgument || hintShown, let step = session.position.step {
+        if showArgument || hintShown, let step = session.step {
             let g = session.position.puzzle.grid
             o.region = Set(step.explanation.region.map { g.index($0) })
             if step.technique == .whatIf {

@@ -31,6 +31,28 @@ struct PersistenceTests {
         #expect(store().savedGame == nil)
     }
 
+    /// Review finding: the daily and practice boards have their own slots and
+    /// never throw away the main game.
+    @Test func dailyAndPracticeNeverOverwriteTheMainGame() {
+        let s = store()
+        let p = BakedPuzzles.puzzle(size: .five)
+        let main = SavedGame(kind: .random(size: .five, tier: .steady), puzzle: p, grade: .steady,
+                             marks: p.initialMarks, elapsed: 50, hintsUsed: 0)
+        let day = DayKey(year: 2026, month: 9, day: 27)
+        let daily = SavedGame(kind: .daily(day), puzzle: p, grade: .severe, marks: p.initialMarks,
+                              elapsed: 5, hintsUsed: 0)
+        s.saveGame(main)
+        s.saveGame(daily)
+        s.saveGame(SavedGame(kind: .practice(.noPool), puzzle: p, grade: .gentle, marks: p.initialMarks,
+                             elapsed: 1, hintsUsed: 0))
+        #expect(store().savedGame == main)
+        #expect(store().savedDaily == daily)
+        s.recordSolve(kind: .daily(day), grade: .severe, size: .seven, seconds: 100, hintsUsed: 0)
+        #expect(store().savedGame == main, "solving the daily must not clear the main game")
+        #expect(store().savedDaily == nil)
+        #expect(store().savedPractice != nil)
+    }
+
     @Test func statsKeepTheBestTime() {
         let s = store()
         s.recordSolve(kind: .random(size: .seven, tier: .sharp), grade: .sharp, size: .seven, seconds: 90, hintsUsed: 2)

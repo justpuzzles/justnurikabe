@@ -8,6 +8,15 @@ struct HomeView: View {
     @Environment(PaywallPresenter.self) private var paywall
     @Environment(PuzzleCache.self) private var cache
     @State private var showingNewBoard = false
+    /// A new board waiting for the player to agree to replace the game in
+    /// progress.
+    @State private var pendingBoard: PendingBoard?
+
+    private struct PendingBoard: Identifiable {
+        let size: BoardSize
+        let tier: Difficulty
+        var id: String { "\(size.rawValue)-\(tier.rawValue)" }
+    }
 
     private var today: DayKey { .today() }
 
@@ -16,7 +25,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 16) {
                 wordmark
                 if progress.nextPathStep != nil { learnCard(primary: true) }
-                if let saved = progress.savedGame, !isDailyToday(saved) { continueCard(saved) }
+                if let saved = progress.savedGame { continueCard(saved) }
                 dailyCard
                 newBoardCard
                 if progress.nextPathStep == nil { learnCard(primary: false) }
@@ -32,9 +41,24 @@ struct HomeView: View {
         .sheet(isPresented: $showingNewBoard) {
             NewBoardSheet { size, tier in
                 showingNewBoard = false
-                path.append(.play(.random(size, tier)))
+                if progress.savedGame == nil {
+                    path.append(.play(.random(size, tier)))
+                } else {
+                    pendingBoard = PendingBoard(size: size, tier: tier)
+                }
             }
             .presentationDetents([.medium, .large])
+        }
+        .confirmationDialog("Replace the game in progress?", isPresented: Binding(
+            get: { pendingBoard != nil }, set: { if !$0 { pendingBoard = nil } }),
+            titleVisibility: .visible, presenting: pendingBoard) { board in
+            Button("Start the new board", role: .destructive) {
+                progress.clearGame(kind: .random(size: board.size, tier: board.tier))
+                path.append(.play(.random(board.size, board.tier)))
+            }
+            Button("Keep playing mine", role: .cancel) {}
+        } message: { _ in
+            Text("Your unfinished board will be lost.")
         }
         .onAppear { cache.prefetch(size: .seven, tier: .steady) }
     }
@@ -162,10 +186,6 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
-    private func isDailyToday(_ saved: SavedGame) -> Bool {
-        if case .daily(let day) = saved.kind { return day == today }
-        return false
-    }
 }
 
 /// Size and difficulty for a new random board.

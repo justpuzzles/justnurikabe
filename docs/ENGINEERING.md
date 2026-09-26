@@ -58,6 +58,8 @@ with `NURIKABE_CALIBRATE=1` after any change.
 
 ## Known limits (v1.0)
 
-- VoiceOver reads the board as a summary (counts), not cell by cell.
+- VoiceOver: the board is a summary plus one synthetic element per cell
+  (`accessibilityChildren`), each a button that cycles the mark. idb's
+  `describe-all` does not list them; `describe-point` does.
 - iPhone only, portrait.
 - 1s remain about a third of clues on 7×7/10×10.

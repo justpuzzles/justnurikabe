@@ -122,7 +122,10 @@ nonisolated enum NurikabeGenerator {
             if result.trace.contains(where: { $0.technique == technique }) { return (result, true) }
             if first == nil { first = result }
         }
-        return (first ?? generate(size: size, tier: tier, seed: seed), false)
+        // Cancelled before any round finished: never start an uncancellable
+        // full generation here; a baked board answers instantly.
+        return (first ?? (isCancelled() ? BakedPuzzles.result(size: size)
+                          : generate(size: size, tier: tier, seed: seed, isCancelled: isCancelled)), false)
     }
 
     // MARK: - Uniqueness repair

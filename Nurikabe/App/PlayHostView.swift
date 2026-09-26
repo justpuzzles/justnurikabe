@@ -49,6 +49,8 @@ struct PlayHostView: View {
 
     private func load() async {
         guard game == nil else { return }
+        let result: GenerationResult
+        let kind: GameKind
         switch source {
         case .resume where generation == 0:
             if let saved = progress.savedGame { game = NurikabeGame(saved: saved); return }
@@ -56,20 +58,28 @@ struct PlayHostView: View {
         case .resume:
             // "Next board" after finishing a resumed game: same size and tier.
             let (size, tier) = resumeShape
-            let r = await cache.board(size: size, tier: tier)
-            start(r, kind: .random(size: size, tier: tier))
+            result = await cache.board(size: size, tier: tier)
+            kind = .random(size: size, tier: tier)
         case .random(let size, let tier):
-            let r = await cache.board(size: size, tier: tier)
-            start(r, kind: .random(size: size, tier: tier))
+            result = await cache.board(size: size, tier: tier)
+            kind = .random(size: size, tier: tier)
         case .daily(let day):
-            if let saved = progress.savedGame, saved.kind == .daily(day) {
+            if let saved = progress.savedDaily, saved.kind == .daily(day) {
                 game = NurikabeGame(saved: saved); return
             }
-            start(await PuzzleCache.daily(day), kind: .daily(day))
+            result = await PuzzleCache.daily(day)
+            kind = .daily(day)
         case .practice(let technique):
-            let r = await PuzzleCache.practice(technique, seed: UInt64.random(in: .min ... .max))
-            start(r, kind: .practice(technique))
+            if generation == 0, let saved = progress.savedPractice, saved.kind == .practice(technique) {
+                game = NurikabeGame(saved: saved); return
+            }
+            result = await PuzzleCache.practice(technique, seed: UInt64.random(in: .min ... .max))
+            kind = .practice(technique)
         }
+        // The player may have left while the board was being drawn: then
+        // nothing is started and nothing is saved.
+        guard !Task.isCancelled else { return }
+        start(result, kind: kind)
     }
 
     /// After "Next board" on a resumed game: the same size and grade.

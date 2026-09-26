@@ -80,6 +80,24 @@ struct GameTests {
         #expect(g.elapsed(at: t0.addingTimeInterval(500)) == 30)
     }
 
+    /// Review finding: the solving tap removes the gesture, so endStroke may
+    /// never run. The clock must stop on the solve itself.
+    @Test func clockStopsWhenTheBoardIsSolvedMidStroke() {
+        let g = game()
+        let t0 = Date()
+        g.resumeClock(at: t0)
+        let blanks = g.marks.indices.filter { g.marks[$0] == .unknown }
+        for i in blanks.dropLast() { g.set(i, to: g.puzzle.solution[i] ? .land : .sea) }
+        let last = blanks.last!
+        // Cycle the last cell to its answer with begin only, no end.
+        while g.marks[last] != (g.puzzle.solution[last] ? .land : .sea) {
+            g.beginStroke(at: last)
+        }
+        #expect(g.isSolved)
+        let frozen = g.elapsed(at: Date())
+        #expect(g.elapsed(at: Date().addingTimeInterval(60)) == frozen)
+    }
+
     @Test func snapshotRoundTrips() {
         let g = game()
         g.set(firstBlank(g), to: .sea)
@@ -120,6 +138,15 @@ struct HintTests {
         g.set(i, to: g.puzzle.solution[i] ? .sea : .land)
         g.advanceHint(policy: .full)
         #expect(g.hint == .mistakes([i]))
+        #expect(g.hintsUsed == 1)
+    }
+
+    /// Review finding: pressing Hint again on the same mistakes is not new help.
+    @Test func repeatedMistakesCheckCountsOnce() {
+        let g = game()
+        let i = g.marks.firstIndex(of: .unknown)!
+        g.set(i, to: g.puzzle.solution[i] ? .sea : .land)
+        for _ in 0..<4 { g.advanceHint(policy: .errorsOnly) }
         #expect(g.hintsUsed == 1)
     }
 

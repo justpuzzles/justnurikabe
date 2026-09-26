@@ -42,6 +42,8 @@ final class ProgressStore {
     private enum Key {
         static let settings = "nurikabe.settings.v1"
         static let savedGame = "nurikabe.savedGame.v1"
+        static let savedDaily = "nurikabe.savedDaily.v1"
+        static let savedPractice = "nurikabe.savedPractice.v1"
         static let rules = "nurikabe.rulesDone.v1"
         static let lessons = "nurikabe.lessonsDone.v1"
         static let stats = "nurikabe.stats.v1"
@@ -51,7 +53,13 @@ final class ProgressStore {
     private let defaults: UserDefaults
 
     var settings: Settings { didSet { save(settings, Key.settings) } }
+    /// The main game in progress (random boards) — what Continue resumes.
     private(set) var savedGame: SavedGame?
+    /// A daily in progress. Its own slot, so opening the daily never throws
+    /// away the main game (and vice versa).
+    private(set) var savedDaily: SavedGame?
+    /// A practice board in progress, likewise separate.
+    private(set) var savedPractice: SavedGame?
     private(set) var completedRules: Set<RuleStep>
     private(set) var completedLessons: Set<Technique>
     private(set) var stats: [String: StatEntry]
@@ -62,6 +70,8 @@ final class ProgressStore {
         defaults = userDefaults
         settings = Self.load(Settings.self, Key.settings, userDefaults) ?? Settings()
         savedGame = Self.load(SavedGame.self, Key.savedGame, userDefaults)
+        savedDaily = Self.load(SavedGame.self, Key.savedDaily, userDefaults)
+        savedPractice = Self.load(SavedGame.self, Key.savedPractice, userDefaults)
         completedRules = Self.load(Set<RuleStep>.self, Key.rules, userDefaults) ?? []
         completedLessons = Self.load(Set<Technique>.self, Key.lessons, userDefaults) ?? []
         stats = Self.load([String: StatEntry].self, Key.stats, userDefaults) ?? [:]
@@ -70,9 +80,22 @@ final class ProgressStore {
 
     // MARK: Games
 
-    func saveGame(_ game: SavedGame?) {
-        savedGame = game
-        if let game { save(game, Key.savedGame) } else { defaults.removeObject(forKey: Key.savedGame) }
+    /// Save a game into the slot its kind belongs to.
+    func saveGame(_ game: SavedGame) {
+        switch game.kind {
+        case .random: savedGame = game; save(game, Key.savedGame)
+        case .daily: savedDaily = game; save(game, Key.savedDaily)
+        case .practice: savedPractice = game; save(game, Key.savedPractice)
+        }
+    }
+
+    /// Clear the slot a kind of game uses.
+    func clearGame(kind: GameKind) {
+        switch kind {
+        case .random: savedGame = nil; defaults.removeObject(forKey: Key.savedGame)
+        case .daily: savedDaily = nil; defaults.removeObject(forKey: Key.savedDaily)
+        case .practice: savedPractice = nil; defaults.removeObject(forKey: Key.savedPractice)
+        }
     }
 
     /// Record a finished board and clear the save.
@@ -89,7 +112,7 @@ final class ProgressStore {
             dailies[day.description] = min(dailies[day.description] ?? .infinity, seconds)
             save(dailies, Key.dailies)
         }
-        saveGame(nil)
+        clearGame(kind: kind)
     }
 
     func entry(size: BoardSize, grade: Difficulty) -> StatEntry {

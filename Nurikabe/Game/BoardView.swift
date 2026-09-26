@@ -48,9 +48,52 @@ struct BoardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
-        .accessibilityElement(children: .ignore)
+        .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilitySummary)
         .accessibilityIdentifier("board")
+        // The Canvas is one opaque drawing; VoiceOver gets a synthetic grid
+        // of cells instead, each activatable like a tap.
+        .accessibilityChildren {
+            SwiftUI.Grid(horizontalSpacing: 0, verticalSpacing: 0) {
+                ForEach(0..<puzzle.size, id: \.self) { r in
+                    GridRow {
+                        ForEach(0..<puzzle.size, id: \.self) { c in
+                            cellElement(r * puzzle.size + c)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func cellElement(_ i: Int) -> some View {
+        let clue = puzzle.clueIndexAt[i]
+        let state: String
+        if clue >= 0 {
+            state = "number \(puzzle.clues[clue].value)"
+        } else {
+            switch marks[i] {
+            case .sea: state = "sea"
+            case .land: state = "land, dotted"
+            case .unknown: state = "blank"
+            }
+        }
+        var extra: [String] = []
+        if overlay.targets.contains(i) { extra.append("outlined") }
+        if overlay.errors.contains(i) { extra.append("marked wrong") }
+        if overlay.region.contains(i) { extra.append("highlighted") }
+        let label = "Row \(i / puzzle.size + 1), column \(i % puzzle.size + 1), \(state)"
+            + (extra.isEmpty ? "" : ", " + extra.joined(separator: ", "))
+        return Rectangle()
+            .fill(.clear)
+            .accessibilityLabel(label)
+            .accessibilityAddTraits(clue < 0 && interactive ? .isButton : [])
+            .accessibilityHint(clue < 0 && interactive ? "Double-tap to cycle blank, sea, dot." : "")
+            .accessibilityAction {
+                guard interactive, clue < 0 else { return }
+                onStroke(.begin(i))
+                onStroke(.end)
+            }
     }
 
     // MARK: Input
@@ -152,9 +195,10 @@ struct BoardView: View {
     }
 
     private var accessibilitySummary: String {
+        let clueAt = puzzle.clueIndexAt
         let sea = marks.filter { $0 == .sea }.count
-        let dots = marks.indices.filter { marks[$0] == .land && puzzle.clueIndexAt[$0] < 0 }.count
+        let dots = marks.indices.filter { marks[$0] == .land && clueAt[$0] < 0 }.count
         let blank = marks.filter { $0 == .unknown }.count
-        return "\(puzzle.size) by \(puzzle.size) board, \(puzzle.clues.count) numbers, \(sea) sea cells, \(dots) dots, \(blank) blank."
+        return "\(puzzle.size) by \(puzzle.size) board: \(puzzle.clues.count) numbers, \(sea) sea, \(dots) dots, \(blank) blank."
     }
 }

@@ -16,8 +16,15 @@ final class LessonSession {
     }
 
     let position: LessonPosition
+    /// The step this position teaches, computed once (for What If it runs a
+    /// look-ahead, far too costly to repeat on every render).
+    let step: SolverStep?
     /// target cell → the mark it must end up with.
     let answers: [Int: Mark]
+    /// A land target currently showing sea from a tap. Taps cycle blank →
+    /// sea → dot, so a player heading for the dot passes through sea; that
+    /// sea is judged only if it is still there when `settle()` runs.
+    private(set) var pending: Int?
     private(set) var marks: [Mark]
     private(set) var feedback: Feedback = .none
     /// Set when the player asked to be shown the answer.
@@ -26,8 +33,9 @@ final class LessonSession {
     init(position: LessonPosition) {
         self.position = position
         marks = position.marks
+        step = position.step
         var answers: [Int: Mark] = [:]
-        if let step = position.step {
+        if let step {
             let grid = position.puzzle.grid
             for c in step.sea { answers[grid.index(c)] = .sea }
             for c in step.land { answers[grid.index(c)] = .land }
@@ -49,29 +57,37 @@ final class LessonSession {
             feedback = .offTarget
             return
         }
-        let next = NurikabeGame.cycled(marks[index])
-        marks[index] = next
-        evaluate(changed: index, answer: answer)
+        marks[index] = NurikabeGame.cycled(marks[index])
+        pending = (answer == .land && marks[index] == .sea) ? index : nil
+        evaluate()
     }
 
-    /// Paint a target directly (drag strokes).
+    /// Paint a target directly (drag strokes). Deliberate, so judged at once.
     func paint(_ index: Int, _ mark: Mark) {
-        guard !isDone, let answer = answers[index], marks[index] != mark else { return }
+        guard !isDone, answers[index] != nil, marks[index] != mark else { return }
         marks[index] = mark
-        evaluate(changed: index, answer: answer)
+        pending = nil
+        evaluate()
     }
 
-    private func evaluate(changed index: Int, answer: Mark) {
-        let mark = marks[index]
-        if mark != .unknown && mark != answer {
-            feedback = .wrong(TechniqueContent.wrongTarget(position.technique, markedSea: mark == .sea))
-            return
+    /// Judge a sea left on a land target (called after a short pause).
+    func settle() {
+        guard pending != nil else { return }
+        pending = nil
+        evaluate()
+    }
+
+    /// Feedback always describes the whole board: the first wrong target,
+    /// else done, else nothing — never a stale verdict about one cell.
+    private func evaluate() {
+        let wrong = answers.keys.sorted().first { i in
+            i != pending && marks[i] != .unknown && marks[i] != answers[i]
         }
-        if answers.allSatisfy({ marks[$0.key] == $0.value }) {
+        if let wrong {
+            feedback = .wrong(TechniqueContent.wrongTarget(position.technique, markedSea: marks[wrong] == .sea))
+        } else if answers.allSatisfy({ marks[$0.key] == $0.value }) {
             feedback = .done
-        } else if case .wrong = feedback, mark == answer {
-            feedback = .none
-        } else if feedback == .offTarget {
+        } else {
             feedback = .none
         }
     }
@@ -80,6 +96,7 @@ final class LessonSession {
     /// the lesson can move on; the path records the lesson either way.
     func reveal() {
         for (i, m) in answers { marks[i] = m }
+        pending = nil
         revealed = true
         feedback = .done
     }

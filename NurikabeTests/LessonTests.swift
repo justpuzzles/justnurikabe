@@ -112,6 +112,43 @@ struct LessonSessionTests {
         s.tap(i); #expect(s.marks[i] == .unknown)
     }
 
+    /// Review finding: taps cycle blank → sea → dot, so heading for a land
+    /// answer passes through sea. That sea must not be called wrong unless
+    /// it stays.
+    @Test func passingThroughSeaToALandAnswerIsNotWrong() throws {
+        let s = LessonSession(position: LessonBoards.techniques[.noPool]![0])
+        let (i, answer) = try #require(s.answers.first { $0.value == .land })
+        #expect(answer == .land)
+        s.tap(i)                       // sea, on the way
+        #expect(s.pending == i)
+        #expect(s.feedback == .none)
+        s.tap(i)                       // dot: the answer
+        #expect(s.pending == nil)
+        #expect(s.feedback == .done || s.feedback == .none)
+        if case .wrong = s.feedback { Issue.record("a correct dot was called wrong") }
+    }
+
+    @Test func seaLeftOnALandAnswerIsWrongOnceSettled() throws {
+        let s = LessonSession(position: LessonBoards.techniques[.noPool]![0])
+        let (i, _) = try #require(s.answers.first { $0.value == .land })
+        s.tap(i)
+        s.settle()
+        guard case .wrong = s.feedback else { Issue.record("expected wrong after settling"); return }
+    }
+
+    /// Review finding: fixing one target must not hide another wrong one.
+    @Test func feedbackKeepsReportingAnyWrongTarget() throws {
+        let pos = try #require(Technique.allCases.lazy
+            .flatMap { LessonBoards.techniques[$0] ?? [] }
+            .first { LessonSession(position: $0).answers.count >= 2 })
+        let s = LessonSession(position: pos)
+        let cells = s.answers.keys.sorted()
+        let a = cells[0], b = cells[1]
+        s.paint(a, s.answers[a] == .sea ? .land : .sea)
+        s.paint(b, s.answers[b]!)
+        guard case .wrong = s.feedback else { Issue.record("wrong verdict about \(a) was cleared"); return }
+    }
+
     @Test func revealFillsTheAnswer() {
         let s = session(.seaEscape)
         s.reveal()

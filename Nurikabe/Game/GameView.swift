@@ -231,9 +231,7 @@ struct GameView: View {
         return TechniqueContent.ruleBreak(first)
     }
 
-    private var satisfiedClues: Set<Int> {
-        Set(game.puzzle.clues.indices.filter { game.isClueSatisfied($0) })
-    }
+    private var satisfiedClues: Set<Int> { game.satisfiedClues }
 
     // MARK: Persistence
 
