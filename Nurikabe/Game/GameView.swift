@@ -174,11 +174,10 @@ struct GameView: View {
                 .foregroundStyle(Theme.textSoft)
             HStack(spacing: 12) {
                 if let onNext {
-                    Button("Next board", action: onNext).buttonStyle(.borderedProminent)
+                    Button("Next board", action: onNext).buttonStyle(.borderedProminent).tint(Theme.sea)
                 }
-                Button("Done") { dismiss() }.buttonStyle(.bordered)
+                Button("Done") { dismiss() }.buttonStyle(.bordered).tint(Theme.accent)
             }
-            .tint(Theme.sea)
         }
         .frame(maxWidth: .infinity)
         .padding(18)

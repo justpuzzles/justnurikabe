@@ -199,7 +199,7 @@ struct NewBoardSheet: View {
                                     Text(TechniqueContent.blurb(t)).font(.caption).foregroundStyle(Theme.textSoft)
                                 }
                                 Spacer()
-                                if tier == t { Image(systemName: "checkmark").foregroundStyle(Theme.sea) }
+                                if tier == t { Image(systemName: "checkmark").foregroundStyle(Theme.accent) }
                             }
                         }
                     }

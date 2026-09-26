@@ -10,7 +10,7 @@ import UIKit
 
 private nonisolated func themeColors() -> [(String, Color)] {
     [("ground", Theme.ground), ("card", Theme.card), ("text", Theme.text), ("textSoft", Theme.textSoft),
-     ("hairline", Theme.hairline), ("land", Theme.land), ("sea", Theme.sea), ("grid", Theme.grid),
+     ("hairline", Theme.hairline), ("accent", Theme.accent), ("land", Theme.land), ("sea", Theme.sea), ("grid", Theme.grid),
      ("numeral", Theme.numeral), ("numeralDone", Theme.numeralDone), ("ochre", Theme.ochre),
      ("ochreWash", Theme.ochreWash), ("error", Theme.error), ("errorWash", Theme.errorWash)]
 }
@@ -34,7 +34,7 @@ private nonisolated func rgba(_ color: UIColor) -> [CGFloat] {
 @Suite struct ThemeIsolationTests {
 
     @Test func tokensAreReachableFromANonisolatedContext() {
-        #expect(themeColors().count == 14)
+        #expect(themeColors().count == 15)
         #expect(motionTokens().count == 5)
     }
 

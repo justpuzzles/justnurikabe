@@ -148,7 +148,7 @@ struct TechniqueLessonView: View {
                     }
                 }
                 .buttonStyle(.bordered)
-                .tint(Theme.sea)
+                .tint(Theme.accent)
             } else {
                 Text("That's the whole ladder. Every board in the game can be solved with these nine arguments.")
                     .foregroundStyle(Theme.textSoft)

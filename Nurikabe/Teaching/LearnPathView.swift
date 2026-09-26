@@ -82,7 +82,7 @@ struct LearnPathView: View {
                 } label: {
                     Text("Continue: \(title(next))").font(.subheadline.weight(.semibold))
                 }
-                .tint(Theme.sea)
+                .tint(Theme.accent)
                 .accessibilityIdentifier("continueLearning")
             } else {
                 Text("You've finished the path. Every board is within reach.")

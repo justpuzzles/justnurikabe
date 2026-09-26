@@ -115,7 +115,7 @@ struct RuleLessonView: View {
                     Button("Undo") { game.undo() }.disabled(!game.canUndo)
                     Button("Hint") { game.advanceHint(policy: .full) }
                 }
-                .tint(Theme.sea)
+                .tint(Theme.accent)
             }
         }
         .onChange(of: game.isSolved) { _, solved in if solved { Haptics.success() } }

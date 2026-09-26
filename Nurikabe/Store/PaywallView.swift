@@ -60,7 +60,7 @@ struct PaywallView: View {
 
             Button("Restore purchase") { Task { await entitlements.restore() } }
                 .disabled(entitlements.purchaseState.isBusy)
-                .tint(Theme.sea)
+                .tint(Theme.accent)
 
             switch entitlements.purchaseState {
             case .loadingProduct, .purchasing, .restoring:

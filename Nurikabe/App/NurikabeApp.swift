@@ -51,7 +51,7 @@ struct NurikabeApp: App {
                 .environment(entitlements)
                 .environment(paywall)
                 .environment(cache)
-                .tint(Theme.sea)
+                .tint(Theme.accent)
         }
     }
 }

@@ -59,6 +59,10 @@ nonisolated enum Theme {
     /// at 0.55.
     static let textSoft = dynamic(light: ThemeRGBA(0x1C2433, alpha: 0.78),
                                   dark: ThemeRGBA(0xECE6DA, alpha: 0.76))
+    /// Interactive text and icons (navigation, plain buttons). Indigo by
+    /// day; by night a pale indigo, because the sea's own indigo all but
+    /// vanishes on the dark ground.
+    static let accent = dynamic(light: ThemeRGBA(0x233A5E), dark: ThemeRGBA(0xA9C1EC))
     /// Hairlines and separators.
     static let hairline = dynamic(light: ThemeRGBA(0x1C2433, alpha: 0.14),
                                   dark: ThemeRGBA(0xECE6DA, alpha: 0.14))

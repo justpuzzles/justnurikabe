@@ -102,7 +102,7 @@ struct LessonBoardView: View {
             Button("Show me") { session.reveal() }
         }
         .font(.callout)
-        .tint(Theme.sea)
+        .tint(Theme.accent)
     }
 
     private var overlay: BoardOverlay {
