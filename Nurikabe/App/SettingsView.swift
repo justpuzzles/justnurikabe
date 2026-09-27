@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct SettingsView: View {
+    static let support = "https://kaikunze.de/justnurikabe/"
+    static let privacyPolicy = "https://kaikunze.de/justnurikabe/justnurikabe-privacy.html"
+
     @Environment(ProgressStore.self) private var progress
     @Environment(EntitlementStore.self) private var entitlements
     @Environment(PaywallPresenter.self) private var paywall
@@ -41,6 +44,14 @@ struct SettingsView: View {
                 Text("Every board has exactly one solution, and you can reach it by reasoning alone.")
                     .font(.footnote)
                     .foregroundStyle(Theme.textSoft)
+                // Guideline 5.1.1(i): the privacy policy must be reachable
+                // inside the app, not only from the store listing.
+                if let url = URL(string: Self.privacyPolicy) {
+                    Link("Privacy policy", destination: url)
+                }
+                if let url = URL(string: Self.support) {
+                    Link("Help and contact", destination: url)
+                }
                 LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")
             }
         }

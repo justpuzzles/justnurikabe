@@ -73,7 +73,7 @@ and block the real one.
 
 | | |
 |---|---|
-| Description / promo / keywords | 1918 / 150 / 97 characters |
+| Description / promo / keywords | 1955 / 150 / 97 characters |
 | Subtitle | `Paint the sea, find islands` (27 of 30) |
 | Review notes | `metadata/review-notes.txt`, 1480 characters |
 | Screenshots | 10 iPhone 6.5" (1242×2688) + 10 iPad 12.9" (2048×2732), light then dark, RGB |
@@ -81,6 +81,24 @@ and block the real one.
 | Site | `index.html`, `justnurikabe-privacy.html`, `shot-*.png`; no external requests |
 | Export compliance | `ITSAppUsesNonExemptEncryption = NO` in the build settings |
 | Privacy manifest | UserDefaults / CA92.1, key names pinned by `ReleaseBuildTests` |
+
+## 3a. Guideline audit (2026-09-27)
+
+| Guideline | Status |
+|---|---|
+| 2.1 completeness | Release build runs on device; no placeholders; locked items open the paywall. Risk: the first IAP must ride in the submission (§2) |
+| 2.3.1 accurate metadata | Each description claim checked against the code. Fixed: "five difficulties" now says 10×10 starts at Sharp |
+| 2.3.2 paid features in screenshots | Screens show paid content (Only Way Out hint, full path); the description spells out what the purchase adds |
+| 2.3.7 metadata terms | No publisher, competitor or platform names; no "best"/"#1" |
+| 2.4.1 iPad | Universal, all iPad orientations, lesson and game layouts sized for regular width |
+| 2.5.1 public APIs | SwiftUI, StoreKit 2, UIKit haptics only; no network code of its own |
+| 3.1.1 IAP | StoreKit non-consumable; price from `displayPrice`; Restore in paywall and Settings; no outside payment wording |
+| 4.3(a) spam | Highest risk (Shikaku's rejection). Distinct puzzle, look and copy; `sentence_diff.py` exits 0; review notes lead with the differences |
+| 5.1.1(i) privacy policy | ASC URL plus in-app link (Settings › About, added in this audit, pinned by `ReleaseBuildTests`) |
+| 5.1.1 / 5.1.2 data | Data Not Collected, no tracking, manifest CA92.1; matches the policy page |
+| 5.2.1 IP | Open: trademark check on "Nurikabe" (§1) |
+| Support URL (1.5) | Site has a contact address. **It must be live before submitting**: the support URL, privacy URL and both in-app links all point to `kaikunze.de/justnurikabe/` |
+| EU (DSA) | Trader status is set per account; confirm it is still valid in ASC › Business |
 
 ## 4. Regenerating
 

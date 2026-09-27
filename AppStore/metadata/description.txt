@@ -12,7 +12,7 @@ The app notices when you use a technique on your own. A deduction counts toward 
 
 You also get:
 • A daily 7×7 board, gentle on Monday and severe on Sunday, with a streak
-• Boards at 5×5, 7×7 and 10×10, in five difficulties
+• Boards at 5×5 and 7×7 in five difficulties, and 10×10 from Sharp up
 • Undo and redo, and a mark for any broken rule
 • Best times, and a list of the techniques each finished board used
 • Dark mode, and VoiceOver down to single cells

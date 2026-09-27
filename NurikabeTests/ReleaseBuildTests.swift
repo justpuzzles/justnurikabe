@@ -139,4 +139,15 @@ import Testing
             }
         }
     }
+
+    /// Guideline 5.1.1(i): the privacy policy link lives in the app too, and
+    /// points at the page the site publishes.
+    @Test func privacyPolicyIsLinkedInTheApp() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+        #expect(SettingsView.privacyPolicy.hasPrefix("https://"))
+        let page = try #require(URL(string: SettingsView.privacyPolicy)?.lastPathComponent)
+        #expect(FileManager.default.fileExists(atPath: root.appending(path: "AppStore/\(page)").path),
+                "the linked privacy page is not in AppStore/, so the site would not publish it")
+    }
 }
