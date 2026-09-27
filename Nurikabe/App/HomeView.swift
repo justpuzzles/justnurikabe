@@ -7,6 +7,7 @@ struct HomeView: View {
     @Environment(EntitlementStore.self) private var entitlements
     @Environment(PaywallPresenter.self) private var paywall
     @Environment(PuzzleCache.self) private var cache
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showingNewBoard = false
     /// A new board waiting for the player to agree to replace the game in
     /// progress.
@@ -19,25 +20,40 @@ struct HomeView: View {
     }
 
     private var today: DayKey { .today() }
+    private var pathDone: Bool { progress.nextPathStep == nil }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                wordmark
-                if progress.nextPathStep != nil { learnCard(primary: true) }
-                if let saved = progress.savedGame { continueCard(saved) }
-                dailyCard
-                newBoardCard
-                if progress.nextPathStep == nil { learnCard(primary: false) }
-                HStack(spacing: 12) {
-                    smallCard("Statistics", "chart.bar") { path.append(.stats) }
-                    smallCard("Settings", "gearshape") { path.append(.settings) }
+            VStack(spacing: 0) {
+                header
+                VStack(spacing: 16) {
+                    primary
+                    tiles
+                    slimRows
                 }
+                .padding(.horizontal, 20)
+                // The first card rides up over the band's lower edge by a set
+                // amount, so the band always ends at a deliberate place.
+                .padding(.top, -Self.cardOverlap)
+                .padding(.bottom, 32)
             }
-            .padding(20)
         }
+        .scrollBounceBehavior(.basedOnSize)
         .background(Theme.ground.ignoresSafeArea())
-        .toolbar(.hidden, for: .navigationBar)
+        // The bar is part of the band: the same fixed indigo (see Theme.band)
+        // and the dark scheme, so the status bar is light over it.
+        .toolbarBackground(Theme.band, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Button { path.append(.stats) } label: { Image(systemName: "chart.bar") }
+                    .accessibilityLabel("Statistics")
+                Button { path.append(.settings) } label: { Image(systemName: "gearshape") }
+                    .accessibilityLabel("Settings")
+            }
+        }
+        .tint(Theme.bandText)
         .sheet(isPresented: $showingNewBoard) {
             NewBoardSheet { size, tier in
                 showingNewBoard = false
@@ -48,6 +64,7 @@ struct HomeView: View {
                 }
             }
             .presentationDetents([.medium, .large])
+            .tint(Theme.accent)
         }
         .confirmationDialog("Replace the game in progress?", isPresented: Binding(
             get: { pendingBoard != nil }, set: { if !$0 { pendingBoard = nil } }),
@@ -63,37 +80,68 @@ struct HomeView: View {
         .onAppear { cache.prefetch(size: .seven, tier: .steady) }
     }
 
-    // MARK: Cards
+    // MARK: Header
 
-    private var wordmark: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text("Just").font(.title3.weight(.medium)).foregroundStyle(Theme.textSoft)
-            Text("Nurikabe").font(Theme.title).foregroundStyle(Theme.text)
-            Text("Paint the sea. Find the islands.").font(.subheadline).foregroundStyle(Theme.textSoft)
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Wordmark()
+            Text("Paint the sea. Find the islands.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.bandSoft)
         }
-        .padding(.top, 12)
-        .accessibilityElement(children: .combine)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 24)
+        .padding(.top, 20)
+        .padding(.bottom, 36 + Self.cardOverlap)
+        .background(alignment: .bottom) {
+            // Tall enough to reach past the top of any overscroll.
+            SeaBand().frame(height: 1200).ignoresSafeArea(edges: .top)
+        }
     }
 
-    private func learnCard(primary: Bool) -> some View {
+    /// How far the first card overlaps the band.
+    private static let cardOverlap: CGFloat = 40
+
+    // MARK: Primary
+
+    @ViewBuilder
+    private var primary: some View {
+        if !pathDone {
+            learnCard
+        } else if let saved = progress.savedGame {
+            continueCard(saved)
+        }
+    }
+
+    private var learnCard: some View {
         let done = progress.completedRules.count + progress.completedLessons.count
         let total = RuleStep.allCases.count + Technique.allCases.count
-        return card(primary: primary) {
-            path.append(.learn)
-        } content: {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(done == 0 ? "Learn to play" : "Learning path").font(.headline)
-                    Text(learnSubtitle).font(.subheadline).opacity(0.85)
-                        .fixedSize(horizontal: false, vertical: true)
-                    ProgressView(value: Double(done), total: Double(total))
-                        .tint(primary ? Theme.ochre : Theme.sea)
-                        .padding(.top, 4)
+        return Button { path.append(.learn) } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(done == 0 ? "Learn to play" : "Keep learning")
+                        .font(Theme.heading)
+                        .foregroundStyle(Theme.text)
+                    Spacer()
+                    Image(systemName: "arrow.right")
+                        .font(.headline)
+                        .foregroundStyle(Theme.accent)
                 }
-                Spacer()
-                Image(systemName: "map").font(.title2)
+                Text(learnSubtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                ProgressView(value: Double(done), total: Double(total))
+                    .tint(Theme.ochre)
+                Text("\(done) of \(total) steps")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Theme.textSoft)
             }
+            .padding(20)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
+        .buttonStyle(.plain)
         .accessibilityIdentifier("learnCard")
     }
 
@@ -101,92 +149,164 @@ struct HomeView: View {
         switch progress.nextPathStep {
         case .rule(let r)?:
             progress.completedRules.isEmpty
-                ? "Start here: the rules in five short steps, then nine lessons."
+                ? "The rules in five short steps, then nine lessons that teach you to think like a solver."
                 : "Next: \(TechniqueContent.title(r))"
         case .lesson(let t)?: "Next lesson: \(TechniqueContent.name(t))"
-        case nil: "All nine techniques learned. Revisit any lesson."
+        case nil: "All nine techniques learned."
         }
     }
 
     private func continueCard(_ saved: SavedGame) -> some View {
-        card(primary: progress.nextPathStep == nil) {
-            path.append(.play(.resume))
-        } content: {
+        Button { path.append(.play(.resume)) } label: {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Continue").font(.headline)
-                    Text("\(TechniqueContent.name(BoardSize(rawValue: saved.puzzle.size) ?? .seven)) · \(TechniqueContent.name(saved.grade)) · \(GameView.clock(saved.elapsed))")
-                        .font(.subheadline).opacity(0.85)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Continue").font(Theme.heading).foregroundStyle(Theme.text)
+                    Text(savedLine(saved)).font(.subheadline).foregroundStyle(Theme.textSoft)
                 }
                 Spacer()
-                Image(systemName: "play.fill").font(.title3)
+                Image(systemName: "play.fill").font(.title3).foregroundStyle(Theme.accent)
             }
+            .padding(20)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
+        .buttonStyle(.plain)
         .accessibilityIdentifier("continueCard")
     }
 
-    private var dailyCard: some View {
+    // MARK: Tiles
+
+    private var tiles: some View {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))
+        return layout {
+            dailyTile
+            newBoardTile
+        }
+    }
+
+    private var dailyTile: some View {
         let solved = progress.isDailySolved(today)
         let streak = progress.dailyStreak(today: today)
-        return card(primary: false) {
+        return tile(symbol: solved ? "checkmark.circle.fill" : "calendar",
+                    title: "Today's chart",
+                    detail: "7×7 · \(TechniqueContent.name(DailySeed.tier(for: today)))",
+                    note: solved ? "Solved" : streak > 1 ? "\(streak)-day streak" : nil) {
             path.append(.play(.daily(today)))
-        } content: {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Today's chart").font(.headline)
-                    Text("7×7 · \(TechniqueContent.name(DailySeed.tier(for: today)))\(solved ? " · solved" : "")")
-                        .font(.subheadline).opacity(0.85)
-                    if streak > 1 {
-                        Text("\(streak)-day streak").font(.caption.weight(.semibold)).foregroundStyle(Theme.ochre)
-                    }
-                }
-                Spacer()
-                Image(systemName: solved ? "checkmark.circle.fill" : "calendar").font(.title3)
-            }
         }
         .accessibilityIdentifier("dailyCard")
     }
 
-    private var newBoardCard: some View {
-        card(primary: false) {
+    private var newBoardTile: some View {
+        tile(symbol: "plus.square", title: "New board", detail: "Pick size and difficulty", note: nil) {
             showingNewBoard = true
-        } content: {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("New board").font(.headline)
-                    Text("Choose a size and how hard.").font(.subheadline).opacity(0.85)
-                }
-                Spacer()
-                Image(systemName: "plus.square").font(.title3)
-            }
         }
         .accessibilityIdentifier("newBoardCard")
     }
 
-    private func smallCard(_ title: String, _ symbol: String, action: @escaping () -> Void) -> some View {
+    private func tile(symbol: String, title: String, detail: String, note: String?,
+                      action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Label(title, systemImage: symbol)
-                .font(.subheadline.weight(.medium))
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .foregroundStyle(Theme.text)
-                .background(Theme.card, in: RoundedRectangle(cornerRadius: 12))
+            VStack(alignment: .leading, spacing: 6) {
+                Image(systemName: symbol)
+                    .font(.title3)
+                    .foregroundStyle(Theme.accent)
+                    .padding(.bottom, 6)
+                Text(title).font(.headline).foregroundStyle(Theme.text)
+                Text(detail).font(.subheadline).foregroundStyle(Theme.textSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let note {
+                    Text(note).font(.caption.weight(.semibold)).foregroundStyle(Theme.ochre)
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, minHeight: 124, alignment: .topLeading)
+            .padding(16)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
-    private func card(primary: Bool, action: @escaping () -> Void,
-                      @ViewBuilder content: () -> some View) -> some View {
+    // MARK: Slim rows
+
+    @ViewBuilder
+    private var slimRows: some View {
+        if !pathDone, let saved = progress.savedGame {
+            slimRow(symbol: "play.fill", title: "Continue", detail: savedLine(saved)) {
+                path.append(.play(.resume))
+            }
+            .accessibilityIdentifier("continueCard")
+        }
+        if pathDone {
+            slimRow(symbol: "map", title: "Lessons", detail: "Revisit any technique") {
+                path.append(.learn)
+            }
+            .accessibilityIdentifier("learnCard")
+        }
+    }
+
+    private func slimRow(symbol: String, title: String, detail: String,
+                         action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            content()
-                .foregroundStyle(primary ? Theme.land : Theme.text)
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(primary ? Theme.sea : Theme.card, in: RoundedRectangle(cornerRadius: 14))
+            HStack(spacing: 12) {
+                Image(systemName: symbol).foregroundStyle(Theme.accent).frame(width: 24)
+                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.text)
+                Text(detail).font(.subheadline).foregroundStyle(Theme.textSoft).lineLimit(1)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Theme.textSoft)
+            }
+            .padding(.horizontal, 16)
+            .frame(minHeight: 52)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
+    private func savedLine(_ saved: SavedGame) -> String {
+        "\(TechniqueContent.name(BoardSize(rawValue: saved.puzzle.size) ?? .seven)) · \(TechniqueContent.name(saved.grade)) · \(GameView.clock(saved.elapsed))"
+    }
 }
+
+// MARK: - Previews (lived-in states)
+
+@MainActor
+private func previewEnvironment(_ configure: (ProgressStore) -> Void) -> some View {
+    let defaults = UserDefaults(suiteName: "preview.\(UUID().uuidString)")!
+    let progress = ProgressStore(userDefaults: defaults)
+    configure(progress)
+    return NavigationStack { HomeView(path: .constant([])) }
+        .environment(progress)
+        .environment(EntitlementStore(userDefaults: defaults, source: PreviewEntitlementSource(owned: false)))
+        .environment(PaywallPresenter())
+        .environment(PuzzleCache())
+}
+
+#Preview("New player") { previewEnvironment { _ in } }
+
+#Preview("Mid-path, game saved") {
+    previewEnvironment { p in
+        for r in RuleStep.allCases { p.completeRule(r) }
+        p.completeLesson(.oneClue)
+        let puzzle = BakedPuzzles.puzzle(size: .seven)
+        p.saveGame(SavedGame(kind: .random(size: .seven, tier: .sharp), puzzle: puzzle, grade: .sharp,
+                             marks: puzzle.initialMarks, elapsed: 312, hintsUsed: 1))
+    }
+}
+
+#Preview("Path done, streak") {
+    previewEnvironment { p in
+        for r in RuleStep.allCases { p.completeRule(r) }
+        for t in Technique.allCases { p.completeLesson(t) }
+        var day = DayKey.today()
+        for _ in 0..<4 {
+            p.recordSolve(kind: .daily(day), grade: .steady, size: .seven, seconds: 200, hintsUsed: 0)
+            day = day.previous
+        }
+    }
+}
+
+#Preview("Dark") { previewEnvironment { _ in }.preferredColorScheme(.dark) }
+
+#Preview("AX3 type") { previewEnvironment { _ in }.dynamicTypeSize(.accessibility3) }
 
 /// Size and difficulty for a new random board.
 struct NewBoardSheet: View {

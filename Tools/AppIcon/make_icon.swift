@@ -3,6 +3,7 @@
 //   swiftc -o /tmp/nurikabe-icon Tools/AppIcon/make_icon.swift && /tmp/nurikabe-icon
 // CoreGraphics rather than AppKit: `noneSkipLast` is an opaque RGBX context,
 // so the PNG carries no alpha channel (App Store icons must not).
+import AppKit
 import CoreGraphics
 import CoreText
 import Foundation
@@ -31,7 +32,9 @@ ctx.setFillColor(sea)
 ctx.fill(CGRect(x: 0, y: 0, width: size, height: size))
 let margin = 92.0
 let cell = (Double(size) - 2 * margin) / 5
-let baseFont = CTFontCreateWithName("NewYorkLarge-Semibold" as CFString, cell * 0.62, nil)
+// SF Rounded, like the board's numerals (Theme.clueFont).
+let rounded = NSFont.systemFont(ofSize: cell * 0.62, weight: .bold).fontDescriptor.withDesign(.rounded)!
+let baseFont = NSFont(descriptor: rounded, size: cell * 0.62)! as CTFont
 for (r, row) in rows.enumerated() {
     for (c, ch) in row.enumerated() where ch != "#" {
         // CoreGraphics' origin is bottom-left.

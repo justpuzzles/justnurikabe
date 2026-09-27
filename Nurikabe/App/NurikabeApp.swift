@@ -22,6 +22,23 @@ struct NurikabeApp: App {
         }
         #endif
         let progress = ProgressStore()
+        #if DEBUG
+        // Screenshots and design reviews: a player partway along the path,
+        // with a game in progress and a short daily streak.
+        if ProcessInfo.processInfo.arguments.contains("-NurikabeSeedMidPath") {
+            for rule in RuleStep.allCases { progress.completeRule(rule) }
+            progress.completeLesson(.oneClue)
+            progress.completeLesson(.twoClues)
+            let puzzle = BakedPuzzles.puzzle(size: .seven)
+            progress.saveGame(SavedGame(kind: .random(size: .seven, tier: .sharp), puzzle: puzzle,
+                                        grade: .sharp, marks: puzzle.initialMarks, elapsed: 312, hintsUsed: 1))
+            var day = DayKey.today().previous
+            for _ in 0..<3 {
+                progress.recordSolve(kind: .daily(day), grade: .steady, size: .seven, seconds: 240, hintsUsed: 0)
+                day = day.previous
+            }
+        }
+        #endif
         _progress = State(initialValue: progress)
         _entitlements = State(initialValue: Self.makeEntitlementStore())
         _paywall = State(initialValue: PaywallPresenter())

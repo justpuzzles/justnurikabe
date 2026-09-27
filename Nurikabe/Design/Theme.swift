@@ -82,6 +82,20 @@ nonisolated enum Theme {
     static let numeralDone = dynamic(light: ThemeRGBA(0x1B2C49, alpha: 0.42),
                                      dark: ThemeRGBA(0x1F3357, alpha: 0.46))
 
+    // MARK: - The sea band (Home's header)
+
+    /// The band's sea. A plain, **non-dynamic** colour on purpose: the
+    /// navigation bar over the band runs in the dark scheme (for a light status
+    /// bar) while the band itself follows the app's scheme, and a dynamic
+    /// token resolves to two different indigos there, leaving a seam.
+    static let band = Color(red: 0x23 / 255, green: 0x3A / 255, blue: 0x5E / 255)
+
+    /// Paper lettering on the sea band. The band is the chart's sea in both
+    /// appearances, so this barely moves between them.
+    static let bandText = dynamic(light: ThemeRGBA(0xF6F1E6), dark: ThemeRGBA(0xF1EBDF))
+    static let bandSoft = dynamic(light: ThemeRGBA(0xF6F1E6, alpha: 0.72),
+                                  dark: ThemeRGBA(0xF1EBDF, alpha: 0.70))
+
     // MARK: - Accents
 
     /// Lighthouse ochre — **teaching only**: hint regions, lesson targets,
@@ -110,10 +124,15 @@ nonisolated enum Theme {
     }
 
     // MARK: - Type
+    //
+    // Display is SF Pro **Expanded** — the wide lettering of a chart title —
+    // and numerals are SF **Rounded**. Both are deliberate departures from
+    // the family: Just Kakuro owns New York serif on paper, Hashi a heavy
+    // centred SF, Shikaku SF bold on lacquer. See docs/DESIGN.md.
 
-    /// Clue numerals: New York, the serif of printed charts.
+    /// Clue numerals: rounded, friendly at every cell size.
     static func clueFont(size: CGFloat) -> Font {
-        .system(size: size, weight: .semibold, design: .serif)
+        .system(size: size, weight: .semibold, design: .rounded)
     }
 
     /// Timers and counts.
@@ -121,7 +140,8 @@ nonisolated enum Theme {
         .system(size: size, weight: .medium, design: .rounded).monospacedDigit()
     }
 
-    static let title = Font.system(.largeTitle, design: .serif, weight: .semibold)
-    static let heading = Font.system(.title2, design: .serif, weight: .semibold)
+    /// Text styles underneath, so Dynamic Type still scales them.
+    static let title = Font.system(.largeTitle, weight: .bold).width(.expanded)
+    static let heading = Font.system(.title2, weight: .semibold).width(.expanded)
     static let body = Font.system(.body)
 }

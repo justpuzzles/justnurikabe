@@ -3,7 +3,8 @@
 iPhone puzzle game (iOS 18.5+) that teaches Nurikabe (Nikoli's island puzzle).
 Clone #5 of the Just Puzzles family (`../kakuro` → `../hashi` → `../numeriqo` →
 `../shikaku`): same architecture and invariants, its own look ("the chart":
-indigo sea, paper islands, ochre for teaching). Engineering notes:
+indigo sea band, SF Expanded display, rounded numerals, ochre for teaching;
+positioning against the siblings in `docs/DESIGN.md`). Engineering notes:
 `docs/ENGINEERING.md`; the learning path: `docs/TEACHING.md`; the ladder:
 `docs/TECHNIQUES.md`; rules: `docs/RULES.md`.
 
