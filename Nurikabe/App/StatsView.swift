@@ -10,6 +10,28 @@ struct StatsView: View {
                 row("Daily streak", "\(progress.dailyStreak())")
                 row("Lessons finished", "\(progress.completedLessons.count) of \(Technique.allCases.count)")
             }
+            Section {
+                ForEach(Technique.allCases) { t in
+                    let count = progress.masteryCount(t)
+                    HStack {
+                        Text(TechniqueContent.name(t)).foregroundStyle(Theme.text)
+                        Spacer()
+                        if count >= MasteryRules.threshold {
+                            Label("Mastered", systemImage: "seal.fill")
+                                .foregroundStyle(Theme.ochre)
+                                .font(.subheadline.weight(.semibold))
+                        } else {
+                            Text("\(count) of \(MasteryRules.threshold)")
+                                .font(Theme.numberFont(size: 15))
+                                .foregroundStyle(Theme.textSoft)
+                        }
+                    }
+                }
+            } header: {
+                Text("Mastery")
+            } footer: {
+                Text("A deduction counts when you make it yourself, without a hint, and the solver agrees it follows from the board.")
+            }
             ForEach(BoardSize.allCases) { size in
                 Section(TechniqueContent.name(size)) {
                     ForEach(Difficulty.allCases) { tier in

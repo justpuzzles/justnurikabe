@@ -77,6 +77,28 @@ nonisolated enum LogicalSolver {
         return SolveResult(solved: solved, trace: trace, marks: marks)
     }
 
+    /// The solver's own steps from `marks` up to and including the first
+    /// step that decides `cell`, or nil if that takes more than `maxSteps`
+    /// steps or the solver gets stuck. Mastery uses it to ask "what argument
+    /// did the player just make?"
+    static func chain(toDecide cell: Int, from start: [Mark], context: SolverContext,
+                      maxSteps: Int = 6, budget: Int = 6_000) -> [SolverStep]? {
+        var marks = start
+        var steps: [SolverStep] = []
+        var budget = budget
+        let target = context.grid.cell(cell)
+        while steps.count < maxSteps, marks[cell] == .unknown {
+            guard budget > 0,
+                  let step = nextStep(context: context, marks: marks, maxTechnique: .whatIf, budget: &budget)
+            else { return nil }
+            budget -= 1
+            steps.append(step)
+            if step.sea.contains(target) || step.land.contains(target) { return steps }
+            apply(step, to: &marks, grid: context.grid)
+        }
+        return nil
+    }
+
     static func apply(_ step: SolverStep, to marks: inout [Mark], grid: Grid) {
         for cell in step.sea { marks[grid.index(cell)] = .sea }
         for cell in step.land { marks[grid.index(cell)] = .land }

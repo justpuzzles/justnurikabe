@@ -17,6 +17,9 @@ nonisolated struct SavedGame: Codable, Equatable, Sendable {
     var marks: [Mark]
     var elapsed: TimeInterval
     var hintsUsed: Int
+    /// Cells that can no longer earn mastery (already credited, or filled by
+    /// a hint). Optional so saves from before mastery still decode.
+    var creditedCells: [Int]? = nil
 }
 
 nonisolated struct Settings: Codable, Equatable, Sendable {
@@ -48,6 +51,7 @@ final class ProgressStore {
         static let lessons = "nurikabe.lessonsDone.v1"
         static let stats = "nurikabe.stats.v1"
         static let dailies = "nurikabe.dailies.v1"
+        static let mastery = "nurikabe.mastery.v1"
     }
 
     private let defaults: UserDefaults
@@ -65,6 +69,8 @@ final class ProgressStore {
     private(set) var stats: [String: StatEntry]
     /// Day → solve time.
     private(set) var dailies: [String: TimeInterval]
+    /// Technique → credited unaided deductions (see MasteryRules).
+    private(set) var mastery: [Technique: Int]
 
     init(userDefaults: UserDefaults = .standard) {
         defaults = userDefaults
@@ -76,6 +82,7 @@ final class ProgressStore {
         completedLessons = Self.load(Set<Technique>.self, Key.lessons, userDefaults) ?? []
         stats = Self.load([String: StatEntry].self, Key.stats, userDefaults) ?? [:]
         dailies = Self.load([String: TimeInterval].self, Key.dailies, userDefaults) ?? [:]
+        mastery = Self.load([Technique: Int].self, Key.mastery, userDefaults) ?? [:]
     }
 
     // MARK: Games
@@ -98,14 +105,26 @@ final class ProgressStore {
         }
     }
 
+    /// What a finished board meant for the records.
+    nonisolated struct SolveRecord: Equatable, Sendable {
+        /// The first solve at this size and grade.
+        let isFirst: Bool
+        /// Faster than every earlier solve at this size and grade.
+        let isNewBest: Bool
+    }
+
     /// Record a finished board and clear the save.
+    @discardableResult
     func recordSolve(kind: GameKind, grade: Difficulty, size: BoardSize,
-                     seconds: TimeInterval, hintsUsed: Int) {
+                     seconds: TimeInterval, hintsUsed: Int) -> SolveRecord {
         let key = Self.statKey(size, grade)
         var entry = stats[key] ?? StatEntry()
+        let previousBest = entry.bestSeconds
+        let record = SolveRecord(isFirst: entry.solved == 0,
+                                 isNewBest: previousBest.map { seconds < $0 } ?? false)
         entry.solved += 1
         if hintsUsed == 0 { entry.solvedWithoutHints += 1 }
-        if entry.bestSeconds.map({ seconds < $0 }) ?? true { entry.bestSeconds = seconds }
+        if previousBest.map({ seconds < $0 }) ?? true { entry.bestSeconds = seconds }
         stats[key] = entry
         save(stats, Key.stats)
         if case .daily(let day) = kind {
@@ -113,6 +132,20 @@ final class ProgressStore {
             save(dailies, Key.dailies)
         }
         clearGame(kind: kind)
+        return record
+    }
+
+    // MARK: Mastery
+
+    func credit(_ technique: Technique) {
+        mastery[technique, default: 0] += 1
+        save(mastery, Key.mastery)
+    }
+
+    func masteryCount(_ technique: Technique) -> Int { mastery[technique] ?? 0 }
+
+    func isMastered(_ technique: Technique) -> Bool {
+        masteryCount(technique) >= MasteryRules.threshold
     }
 
     func entry(size: BoardSize, grade: Difficulty) -> StatEntry {

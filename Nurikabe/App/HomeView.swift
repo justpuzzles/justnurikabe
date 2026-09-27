@@ -32,6 +32,7 @@ struct HomeView: View {
                     slimRows
                 }
                 .padding(.horizontal, 20)
+                .readableColumn(680)
                 // The first card rides up over the band's lower edge by a set
                 // amount, so the band always ends at a deliberate place.
                 .padding(.top, -Self.cardOverlap)
@@ -56,7 +57,9 @@ struct HomeView: View {
                     pendingBoard = PendingBoard(size: size, tier: tier)
                 }
             }
-            .presentationDetents([.medium, .large])
+            // Full height: at .medium the last difficulty (Severe) sat below
+            // the fold.
+            .presentationDetents([.large])
             .tint(Theme.accent)
         }
         .confirmationDialog("Replace the game in progress?", isPresented: Binding(
@@ -112,6 +115,7 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
+        .readableColumn(680)
         .padding(.top, 20)
         .padding(.bottom, 36 + Self.cardOverlap)
         .background(alignment: .bottom) {

@@ -48,6 +48,7 @@ struct RuleLessonView: View {
                 }
             }
             .padding(20)
+            .readableColumn()
         }
         .onChange(of: card) { _, _ in
             if onBoard { withAnimation(Motion.chrome) { proxy.scrollTo(LessonAnchor.board, anchor: .top) } }

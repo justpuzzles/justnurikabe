@@ -27,6 +27,7 @@ struct TechniqueLessonView: View {
                 }
             }
             .padding(20)
+            .readableColumn()
         }
         .onChange(of: page) { _, _ in
             withAnimation(Motion.chrome) { proxy.scrollTo(page == .done ? LessonAnchor.feedback : LessonAnchor.board, anchor: .top) }

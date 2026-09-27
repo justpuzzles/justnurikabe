@@ -28,12 +28,25 @@ final class NurikabeGame {
     private var strokeMark: Mark?
     private var strokeStart: [Mark]?
 
+    // MARK: Mastery state
+
+    /// Cells that can no longer earn mastery: credited once, or filled by a
+    /// hint. Survives undo, so place → undo → place cannot farm credit.
+    private(set) var creditedCells: Set<Int>
+    /// Techniques credited during this game, for the finish card.
+    private(set) var creditsThisGame: [Technique: Int] = [:]
+    /// Called on the main actor for each credited deduction; the view wires
+    /// it to ProgressStore.
+    var onCredit: ((Technique) -> Void)?
+
     /// Elapsed time is accumulated while the board is on screen.
     private var accumulated: TimeInterval
     private var resumedAt: Date?
 
     init(puzzle: Puzzle, kind: GameKind, grade: Difficulty,
-         marks: [Mark]? = nil, elapsed: TimeInterval = 0, hintsUsed: Int = 0) {
+         marks: [Mark]? = nil, elapsed: TimeInterval = 0, hintsUsed: Int = 0,
+         creditedCells: Set<Int> = []) {
+        self.creditedCells = creditedCells
         self.puzzle = puzzle
         self.kind = kind
         self.grade = grade
@@ -46,7 +59,8 @@ final class NurikabeGame {
 
     convenience init(saved: SavedGame) {
         self.init(puzzle: saved.puzzle, kind: saved.kind, grade: saved.grade,
-                  marks: saved.marks, elapsed: saved.elapsed, hintsUsed: saved.hintsUsed)
+                  marks: saved.marks, elapsed: saved.elapsed, hintsUsed: saved.hintsUsed,
+                  creditedCells: Set(saved.creditedCells ?? []))
     }
 
     var size: BoardSize { BoardSize(rawValue: puzzle.size) ?? .seven }
@@ -54,7 +68,8 @@ final class NurikabeGame {
 
     var snapshot: SavedGame {
         SavedGame(kind: kind, puzzle: puzzle, grade: grade, marks: marks,
-                  elapsed: elapsed(at: Date()), hintsUsed: hintsUsed)
+                  elapsed: elapsed(at: Date()), hintsUsed: hintsUsed,
+                  creditedCells: creditedCells.sorted())
     }
 
     // MARK: Timer
@@ -105,22 +120,62 @@ final class NurikabeGame {
     }
 
     func endStroke() {
-        if let start = strokeStart, start != marks {
-            undoStack.append(start)
-            redoStack.removeAll()
-        }
+        settleStroke()
+        if isSolved { pauseClock() }
+    }
+
+    /// Close the open stroke: record undo and judge its marks for mastery.
+    /// Also runs when a stroke solves the board, because the gesture that
+    /// would have sent the end event is gone by then.
+    private func settleStroke() {
+        guard let start = strokeStart else { return }
         strokeStart = nil
         strokeMark = nil
-        if isSolved { pauseClock() }
+        guard start != marks else { return }
+        undoStack.append(start)
+        redoStack.removeAll()
+        judge(from: start)
+    }
+
+    /// Credit the cells a move newly marked correctly. They are claimed at
+    /// once (anti-farming); the solver chain behind each is found off the
+    /// main actor, since a What If look-ahead can take a moment.
+    private func judge(from before: [Mark]) {
+        let fresh = marks.indices.filter { i in
+            marks[i] != before[i] && marks[i] != .unknown
+                && (marks[i] == .land) == puzzle.solution[i]
+                && !isClue(i) && !creditedCells.contains(i)
+        }
+        guard !fresh.isEmpty else { return }
+        creditedCells.formUnion(fresh)
+        // What the player knew: the board before the move, wrong marks cleared.
+        var known = before
+        for i in known.indices where known[i] != .unknown && (known[i] == .land) != puzzle.solution[i] {
+            known[i] = .unknown
+        }
+        let context = self.context
+        let board = known       // a let: the detached closure may not capture a var
+        Task { [weak self] in
+            let credits = await Task.detached(priority: .utility) {
+                MasteryRules.credits(for: fresh, before: board, context: context)
+            }.value
+            guard let self else { return }
+            for t in credits {
+                self.creditsThisGame[t, default: 0] += 1
+                self.onCredit?(t)
+            }
+        }
     }
 
     /// Set one cell outright (lessons, applied hints). Records undo.
     func set(_ index: Int, to mark: Mark) {
         guard !isClue(index), marks[index] != mark else { return }
+        let before = marks
         undoStack.append(marks)
         redoStack.removeAll()
         marks[index] = mark
         changed()
+        judge(from: before)
         if isSolved { pauseClock() }
     }
 
@@ -182,7 +237,10 @@ final class NurikabeGame {
         // Stop the clock here, not in the input paths: the tap that solves
         // the board also removes its gesture, so the stroke's end event may
         // never arrive.
-        if isSolved { pauseClock() }
+        if isSolved {
+            pauseClock()
+            settleStroke()
+        }
     }
 
     // MARK: Hints
@@ -197,6 +255,8 @@ final class NurikabeGame {
             undoStack.append(marks)
             redoStack.removeAll()
             LogicalSolver.apply(step, to: &marks, grid: grid)
+            // A hint's cells never earn mastery.
+            creditedCells.formUnion((step.sea + step.land).map { grid.index($0) })
             hint = nil
             refresh()
             if isSolved { pauseClock() }

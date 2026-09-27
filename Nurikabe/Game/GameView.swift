@@ -13,35 +13,44 @@ struct GameView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
     @State private var recorded = false
+    @State private var solveRecord: ProgressStore.SolveRecord?
+    /// The techniques the puzzle's solve uses, in ladder order (found once,
+    /// off the main actor, when the board is finished).
+    @State private var techniquesUsed: [Technique] = []
+
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
-        VStack(spacing: 14) {
-            header
-            BoardView(puzzle: game.puzzle, marks: game.marks, overlay: overlay,
-                      satisfiedClues: satisfiedClues, interactive: !game.isSolved) { event in
-                switch event {
-                case .begin(let i):
-                    game.beginStroke(at: i)
-                    Haptics.mark()
-                case .extend(let i):
-                    game.extendStroke(to: i)
-                case .end:
-                    game.endStroke()
-                    save()
+        GeometryReader { geo in
+            if sizeClass == .regular && geo.size.width > geo.size.height {
+                // iPad landscape: the board on the left, sized by height; the
+                // talk (hints, finish) and the tools in a column beside it.
+                HStack(alignment: .top, spacing: 28) {
+                    VStack(spacing: 14) {
+                        header
+                        board
+                    }
+                    .frame(width: min(geo.size.height - 24, geo.size.width * 0.6))
+                    VStack(spacing: 14) {
+                        panel
+                        Spacer(minLength: 0)
+                        if !game.isSolved { toolbar }
+                    }
+                    .frame(maxWidth: 420)
+                    .padding(.top, 40)
                 }
+                .padding(.horizontal, 24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                VStack(spacing: 14) {
+                    header
+                    board
+                    panel
+                    Spacer(minLength: 0)
+                    if !game.isSolved { toolbar }
+                }
+                .readableColumn(sizeClass == .regular ? 760 : .infinity)
             }
-            .padding(.horizontal, 12)
-            .animation(Motion.mark, value: game.marks)
-
-            if game.isSolved {
-                finishCard
-            } else if let hint = game.hint {
-                hintCard(hint)
-            } else if let breakNote = ruleBreakNote {
-                note(breakNote, colour: Theme.error)
-            }
-            Spacer(minLength: 0)
-            if !game.isSolved { toolbar }
         }
         .padding(.vertical, 10)
         .background(Theme.ground.ignoresSafeArea())
@@ -58,7 +67,10 @@ struct GameView: View {
                 .accessibilityLabel("More")
             }
         }
-        .onAppear { game.resumeClock() }
+        .onAppear {
+            game.resumeClock()
+            game.onCredit = { progress.credit($0) }
+        }
         .onDisappear { game.pauseClock(); save() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { game.resumeClock() } else { game.pauseClock(); save() }
@@ -69,6 +81,36 @@ struct GameView: View {
     }
 
     // MARK: Pieces
+
+    private var board: some View {
+        BoardView(puzzle: game.puzzle, marks: game.marks, overlay: overlay,
+                  satisfiedClues: satisfiedClues, interactive: !game.isSolved) { event in
+            switch event {
+            case .begin(let i):
+                game.beginStroke(at: i)
+                Haptics.mark()
+            case .extend(let i):
+                game.extendStroke(to: i)
+            case .end:
+                game.endStroke()
+                save()
+            }
+        }
+        .padding(.horizontal, 12)
+        .animation(Motion.mark, value: game.marks)
+    }
+
+    /// What the game has to say: the finish card, a hint, or a broken rule.
+    @ViewBuilder
+    private var panel: some View {
+        if game.isSolved {
+            finishCard
+        } else if let hint = game.hint {
+            hintCard(hint)
+        } else if let breakNote = ruleBreakNote {
+            note(breakNote, colour: Theme.error)
+        }
+    }
 
     private var header: some View {
         HStack {
@@ -167,11 +209,25 @@ struct GameView: View {
     }
 
     private var finishCard: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Text("Solved").font(Theme.heading).foregroundStyle(Theme.text)
             Text("\(Self.clock(game.elapsed(at: Date()))) · \(game.hintsUsed == 0 ? "no hints" : "\(game.hintsUsed) hint\(game.hintsUsed == 1 ? "" : "s")")")
                 .font(Theme.numberFont(size: 16))
                 .foregroundStyle(Theme.textSoft)
+            if let line = recordLine {
+                Label(line, systemImage: "rosette")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.ochre)
+            }
+            if !techniquesUsed.isEmpty {
+                VStack(spacing: 8) {
+                    Text("This board used").font(.caption).foregroundStyle(Theme.textSoft)
+                    ChipFlow(spacing: 6) {
+                        ForEach(techniquesUsed) { t in techniqueChip(t) }
+                    }
+                }
+                .padding(.top, 2)
+            }
             HStack(spacing: 12) {
                 if let onNext {
                     Button("Next board", action: onNext).buttonStyle(.borderedProminent).tint(Theme.sea)
@@ -184,6 +240,39 @@ struct GameView: View {
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 14))
         .padding(.horizontal, 16)
         .accessibilityIdentifier("solvedCard")
+    }
+
+    private var recordLine: String? {
+        guard let solveRecord else { return nil }
+        let where_ = "\(TechniqueContent.name(game.size)) \(TechniqueContent.name(game.grade))"
+        if solveRecord.isNewBest { return "New best for \(where_)" }
+        if solveRecord.isFirst { return "Your first \(where_) board" }
+        return nil
+    }
+
+    /// A technique the board used. Mastered in this very game → ochre with a
+    /// seal. Opens the lesson, or the paywall when the lesson is locked.
+    @ViewBuilder
+    private func techniqueChip(_ t: Technique) -> some View {
+        let justMastered = (game.creditsThisGame[t] ?? 0) > 0 && progress.isMastered(t)
+            && progress.masteryCount(t) - (game.creditsThisGame[t] ?? 0) < MasteryRules.threshold
+        let label = HStack(spacing: 4) {
+            if justMastered { Image(systemName: "seal.fill") }
+            Text(TechniqueContent.name(t))
+        }
+        .font(.caption.weight(.medium))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .foregroundStyle(justMastered ? Theme.land : Theme.text)
+        .background(justMastered ? Theme.ochre : Theme.ground, in: Capsule())
+        if FeatureGate.isLessonAvailable(t, unlocked: entitlements.isUnlocked) {
+            NavigationLink(value: Route.lesson(t)) { label }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the lesson")
+        } else {
+            Button { paywall.present(.advancedLessons) } label: { label }
+                .buttonStyle(.plain)
+        }
     }
 
     // MARK: Derived
@@ -244,8 +333,17 @@ struct GameView: View {
         guard !recorded else { return }
         recorded = true
         Haptics.success()
-        progress.recordSolve(kind: game.kind, grade: game.grade, size: game.size,
-                             seconds: game.elapsed(at: Date()), hintsUsed: game.hintsUsed)
+        solveRecord = progress.recordSolve(kind: game.kind, grade: game.grade, size: game.size,
+                                           seconds: game.elapsed(at: Date()), hintsUsed: game.hintsUsed)
+        let puzzle = game.puzzle
+        Task {
+            let used = await Task.detached(priority: .utility) { () -> [Technique] in
+                var budget = 200_000
+                let trace = LogicalSolver.solve(puzzle: puzzle, budget: &budget).trace
+                return Set(trace.map(\.technique)).sorted()
+            }.value
+            techniquesUsed = used
+        }
     }
 
     static func clock(_ seconds: TimeInterval) -> String {

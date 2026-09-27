@@ -41,7 +41,8 @@ struct LearnPathView: View {
                         row(title: "\(technique.rawValue + 1). \(TechniqueContent.name(technique))",
                             subtitle: TechniqueContent.rule(technique),
                             state: progress.completedLessons.contains(technique) ? .done
-                                : !unlocked ? .locked : paid ? .paid : .open)
+                                : !unlocked ? .locked : paid ? .paid : .open,
+                            mastery: progress.masteryCount(technique))
                     }
                     .disabled(!unlocked)
                     .accessibilityIdentifier("lesson-\(technique.rawValue)")
@@ -49,11 +50,12 @@ struct LearnPathView: View {
             } header: {
                 Text("Chapter 2 · The techniques")
             } footer: {
-                Text("Each lesson explains one argument, works an example on a real board, then gives you two to try. Lessons open in order.")
+                Text("Each lesson explains one argument, works an example on a real board, then gives you two to try. Lessons open in order. A seal appears once you've used a technique on your own \(MasteryRules.threshold) times in games.")
             }
             .listRowBackground(Theme.card)
         }
         .scrollContentBackground(.hidden)
+        .readableColumn(720)
         .background(Theme.ground.ignoresSafeArea())
         .navigationTitle("Learn")
     }
@@ -106,7 +108,8 @@ struct LearnPathView: View {
 
     private enum RowState { case open, done, locked, paid }
 
-    private func row(title: String, subtitle: String, state: RowState) -> some View {
+    private func row(title: String, subtitle: String, state: RowState,
+                     mastery: Int? = nil) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbol(state))
                 .font(.title3)
@@ -116,11 +119,28 @@ struct LearnPathView: View {
                 Text(title).font(.body.weight(.medium)).foregroundStyle(Theme.text)
                 Text(subtitle).font(.footnote).foregroundStyle(Theme.textSoft).lineLimit(2)
             }
+            Spacer(minLength: 4)
+            if let mastery, mastery > 0 { masteryBadge(mastery) }
         }
         .opacity(state == .locked ? 0.55 : 1)
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
         .accessibilityValue(accessibilityState(state))
+    }
+
+    /// A seal once mastered; progress toward it before.
+    @ViewBuilder
+    private func masteryBadge(_ count: Int) -> some View {
+        if count >= MasteryRules.threshold {
+            Image(systemName: "seal.fill")
+                .foregroundStyle(Theme.ochre)
+                .accessibilityLabel("Mastered")
+        } else {
+            Text("\(count)/\(MasteryRules.threshold)")
+                .font(.caption.weight(.semibold).monospacedDigit())
+                .foregroundStyle(Theme.textSoft)
+                .accessibilityLabel("\(count) of \(MasteryRules.threshold) toward mastery")
+        }
     }
 
     private func symbol(_ state: RowState) -> String {
