@@ -51,6 +51,10 @@ equal cards and left the bottom third empty. Now:
   so a dynamic token would resolve to two different indigos and leave a seam.
 - A hidden toolbar background loses `toolbarColorScheme`, so the status bar turns
   dark on indigo. Keep the bar background visible and set it to `Theme.band`.
+- iOS 26 wraps toolbar buttons in a Liquid Glass capsule: a pale pill on the
+  band that also breaks the no-translucency rule. Home's Stats/Settings use
+  `sharedBackgroundVisibility(.hidden)` behind `if #available(iOS 26, *)`.
+  Pushed screens keep iOS 26's standard glass back/menu buttons on paper.
 - The island strip is capped at 22 pt cells. A fixed-width decoration that grows
   with Dynamic Type pushed the whole Home off the left edge at AX sizes.
 - `-NurikabeSeedMidPath` (DEBUG) seeds a mid-path player with a saved game and a

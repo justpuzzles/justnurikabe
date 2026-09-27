@@ -45,14 +45,7 @@ struct HomeView: View {
         .toolbarBackground(Theme.band, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button { path.append(.stats) } label: { Image(systemName: "chart.bar") }
-                    .accessibilityLabel("Statistics")
-                Button { path.append(.settings) } label: { Image(systemName: "gearshape") }
-                    .accessibilityLabel("Settings")
-            }
-        }
+        .toolbar { bandToolbar }
         .tint(Theme.bandText)
         .sheet(isPresented: $showingNewBoard) {
             NewBoardSheet { size, tier in
@@ -81,6 +74,34 @@ struct HomeView: View {
     }
 
     // MARK: Header
+
+    /// Stats and Settings as plain icons on the band. iOS 26 would wrap them
+    /// in a Liquid Glass capsule, a pale pill on the indigo that also breaks
+    /// the family's no-translucency rule, so the shared background is hidden.
+    @ToolbarContentBuilder
+    private var bandToolbar: some ToolbarContent {
+        if #available(iOS 26.0, *) {
+            ToolbarItem(placement: .topBarTrailing) { statsButton }
+                .sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .topBarTrailing) { settingsButton }
+                .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                statsButton
+                settingsButton
+            }
+        }
+    }
+
+    private var statsButton: some View {
+        Button { path.append(.stats) } label: { Image(systemName: "chart.bar") }
+            .accessibilityLabel("Statistics")
+    }
+
+    private var settingsButton: some View {
+        Button { path.append(.settings) } label: { Image(systemName: "gearshape") }
+            .accessibilityLabel("Settings")
+    }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 14) {
