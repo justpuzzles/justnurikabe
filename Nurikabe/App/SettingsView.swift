@@ -38,7 +38,7 @@ struct SettingsView: View {
                 }
             }
             Section("About") {
-                Text("Every board here has exactly one solution, and every board can be solved by reasoning alone, without guessing.")
+                Text("Every board has exactly one solution, and you can reach it by reasoning alone.")
                     .font(.footnote)
                     .foregroundStyle(Theme.textSoft)
                 LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")

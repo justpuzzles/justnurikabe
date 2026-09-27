@@ -70,6 +70,7 @@ struct GameView: View {
         .onAppear {
             game.resumeClock()
             game.onCredit = { progress.credit($0) }
+            stageScreenshot()
         }
         .onDisappear { game.pauseClock(); save() }
         .onChange(of: scenePhase) { _, phase in
@@ -321,6 +322,21 @@ struct GameView: View {
     }
 
     private var satisfiedClues: Set<Int> { game.satisfiedClues }
+
+    /// DEBUG screenshot scenes: climb the hint ladder to the drawn argument,
+    /// or place the last cell to reach the finish card.
+    private func stageScreenshot() {
+        switch ScreenshotScene.current {
+        case .hint?:
+            for _ in 0..<3 { game.advanceHint(policy: .full) }
+        case .win?:
+            if let last = game.marks.indices.first(where: { game.marks[$0] == .unknown }) {
+                game.set(last, to: game.puzzle.solution[last] ? .land : .sea)
+            }
+        default:
+            break
+        }
+    }
 
     // MARK: Persistence
 

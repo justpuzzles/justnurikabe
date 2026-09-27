@@ -22,9 +22,9 @@ nonisolated enum PaidFeature: String, CaseIterable, Sendable, Identifiable {
     var pitch: String {
         switch self {
         case .advancedLessons:
-            "The last four lessons: Only Way Out, The Sea Must Connect, Common Ground and What If. They are the arguments hard boards are built on."
+            "The last four lessons: Only Way Out, The Sea Must Connect, Common Ground and What If. Hard boards depend on them."
         case .largeBoards:
-            "The 10×10 chart, with more islands in play at once and long chains of reasoning across the sea."
+            "The 10×10 board, where more islands are in play at once and deductions run in longer chains."
         case .teachingHints:
             "During a game, the hint names the argument and draws it on your board, instead of only pointing out a mistake."
         }

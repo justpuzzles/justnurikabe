@@ -44,8 +44,7 @@ struct LessonBoardView: View {
                     if session.pending != nil { settleSoon() }
                 }
             }
-            .frame(maxWidth: 330)
-            .frame(maxWidth: .infinity)
+            .lessonBoardFrame()
             .animation(Motion.mark, value: session.marks)
             .id(LessonAnchor.board)
 

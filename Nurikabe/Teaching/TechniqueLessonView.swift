@@ -46,6 +46,7 @@ struct TechniqueLessonView: View {
             if sessions.isEmpty {
                 sessions = (LessonBoards.techniques[technique] ?? []).map { LessonSession(position: $0) }
             }
+            if ScreenshotScene.current == .lesson { page = .example }
         }
     }
 
@@ -151,7 +152,7 @@ struct TechniqueLessonView: View {
                 .buttonStyle(.bordered)
                 .tint(Theme.accent)
             } else {
-                Text("That's the whole ladder. Every board in the game can be solved with these nine arguments.")
+                Text("That's the whole ladder. These nine arguments solve every board in the game.")
                     .foregroundStyle(Theme.textSoft)
             }
         }

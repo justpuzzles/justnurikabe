@@ -1,0 +1,21 @@
+A Nurikabe board is a grid of numbers. You paint cells as sea until each number sits on an island of exactly that many cells, the sea joins up into one piece, and no 2×2 square is all sea.
+
+Just Nurikabe starts at the beginning. Five short steps cover the rules on small boards, one rule at a time. If you tap the wrong cell, the app tells you which rule it breaks.
+
+After that come nine lessons, from Ones and Finished Island through The Sea Must Connect to Common Ground and What If. Each lesson explains one deduction in plain words, works an example on a real board with the argument drawn in, and then gives you two positions to try yourself. A practice board built around that technique follows.
+
+When you get stuck in a game, the hint button works in steps. The first tap shows where to look. The second names the technique. The third draws the argument on your board. The cells are filled in only if you tap a fourth time.
+
+Every board is generated on your device and checked before you see it. It has exactly one solution, and the app's own solver reaches that solution using the nine techniques from the lessons, so you are never asked to guess.
+
+The app notices when you use a technique on your own. A deduction counts toward that technique's seal when you make it without a hint and the solver agrees it follows from the board.
+
+You also get:
+• A daily 7×7 board, gentle on Monday and severe on Sunday, with a streak
+• Boards at 5×5, 7×7 and 10×10, in five difficulties
+• Undo and redo, and a mark for any broken rule
+• Best times, and a list of the techniques each finished board used
+• Dark mode, and VoiceOver down to single cells
+• iPhone and iPad, no account
+
+Free: the rules, the first five lessons, 5×5 and 7×7 boards at every difficulty, and the daily board. One purchase adds the last four lessons, 10×10 boards, and in-game hints that explain their argument. There are no ads and no subscription.

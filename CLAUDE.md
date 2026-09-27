@@ -62,7 +62,13 @@ swiftc -o /tmp/nurikabe-icon Tools/AppIcon/make_icon.swift && /tmp/nurikabe-icon
 ```
 
 Debug launch flags: `-uiTestResetState` (wipe defaults), `-NurikabeScreenshotUnlock`
-(paid screens). Both live inside `#if DEBUG` (StoreTests checks the second).
+(paid screens), `-NurikabeScreenshotScene <hint|lesson|path|home|win>` (seeded
+store scenes). All live inside `#if DEBUG`, strings included (StoreTests checks).
+
+App Store kit: `AppStore/SUBMISSION.md` (runbook and what's left),
+`AppStore/capture_screenshots.py`, `AppStore/iap/generate.py`, site pages in
+`AppStore/`, and `Tools/ListingCheck/sentence_diff.py` (4.3 sentence guard, exit 1
+on any sentence shared with a sibling).
 
 ## Layout
 

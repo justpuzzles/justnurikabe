@@ -25,7 +25,7 @@ nonisolated enum TechniqueContent {
             [
                 "Every cell is either land or sea. You paint the sea; the land is what's left.",
                 "Each number sits on an island: a group of land cells joined side by side. The number is the island's size, counting the number's own cell.",
-                "Tap a cell once to paint it sea. Tap again to leave a dot, meaning \u{201C}this is land, I'm sure.\u{201D} A third tap clears it. You can also drag to paint several cells.",
+                "Tap a cell once to paint it sea. Tap again to leave a dot, meaning \"this is land, I'm sure.\" A third tap clears it. You can also drag to paint several cells.",
             ]
         case .oneNumber:
             [
@@ -95,10 +95,10 @@ nonisolated enum TechniqueContent {
         case .completeIsland: "When an island has all its cells, every blank beside it is sea."
         case .noPool: "Three sea cells in a 2×2 square make the fourth land."
         case .unreachable: "A cell no island can reach in time is sea."
-        case .islandEscape: "An island that needs more cells, with one blank neighbour, grows there."
+        case .islandEscape: "An island that needs more cells, with one blank neighbor, grows there."
         case .seaEscape: "A patch of sea with one way out must flow through it."
         case .commonGround: "A cell that every possible shape of an island uses is land."
-        case .whatIf: "If one colour for a cell breaks a rule, it is the other colour."
+        case .whatIf: "If one color for a cell breaks a rule, it is the other color."
         }
     }
 
@@ -107,8 +107,8 @@ nonisolated enum TechniqueContent {
         switch t {
         case .oneClue:
             [
-                "An island of size 1 is just the numbered cell itself.",
-                "Its neighbours can't be land, because that land would join the island and make it bigger than 1. So every cell beside a 1 is sea.",
+                "An island of size 1 is only its numbered cell.",
+                "Its neighbors can't be land, because that land would join the island and make it bigger than 1. So every cell beside a 1 is sea.",
                 "Start every board by painting around the 1s.",
             ]
         case .twoClues:
@@ -126,7 +126,7 @@ nonisolated enum TechniqueContent {
         case .noPool:
             [
                 "The sea can never fill a 2×2 square.",
-                "So wherever three sea cells share a square, the fourth cell must be land. It then has to belong to some island, which often tells you more.",
+                "So wherever three sea cells share a square, the fourth cell must be land. That new land has to belong to an island, and working out which one often gives the next move.",
             ]
         case .unreachable:
             [
@@ -142,7 +142,7 @@ nonisolated enum TechniqueContent {
         case .seaEscape:
             [
                 "All the sea is one piece. A patch of sea that isn't all of it must connect to the rest.",
-                "If that patch has only one blank neighbour, the connection has to go through it, so it is sea.",
+                "If that patch has only one blank neighbor, the connection has to go through it, so it is sea.",
                 "Watch the edges and corners, where sea patches get boxed in easily.",
             ]
         case .commonGround:
@@ -155,7 +155,7 @@ nonisolated enum TechniqueContent {
             [
                 "When nothing simpler applies, try a cell. Suppose it is land, and follow the other arguments from there.",
                 "If that leads to a broken rule, such as a pool, a sea patch cut off or an island that can't be finished, the supposition was wrong and the cell is sea. The same works the other way round.",
-                "This isn't guessing: you only keep a colour when the other one is impossible.",
+                "This isn't guessing: you only keep a color when the other one is impossible.",
             ]
         }
     }
@@ -176,7 +176,7 @@ nonisolated enum TechniqueContent {
         case .islandEscape: "Right. It was the only way out."
         case .seaEscape: "Right. The sea had to flow through there."
         case .commonGround: "Right. Every way the island can finish agrees."
-        case .whatIf: "Right. The other colour led to a broken rule."
+        case .whatIf: "Right. The other color led to a broken rule."
         }
     }
 
@@ -208,11 +208,11 @@ nonisolated enum TechniqueContent {
             return "No island has enough cells left to reach \(one ? "this cell" : "these cells"), so \(decided)."
         case .islandEscape:
             if e.numbers.count == 2 {
-                return "This island of \(e.numbers[0]) has only \(e.numbers[1]) cell\(e.numbers[1] == 1 ? "" : "s") and one blank neighbour. It has to grow there, so \(decided)."
+                return "This island of \(e.numbers[0]) has only \(e.numbers[1]) cell\(e.numbers[1] == 1 ? "" : "s") and one blank neighbor. It has to grow there, so \(decided)."
             }
-            return "This land has no number yet and only one blank neighbour. It must reach a number through it, so \(decided)."
+            return "This land has no number yet and only one blank neighbor. It must reach a number through it, so \(decided)."
         case .seaEscape:
-            return "This sea patch has only one blank neighbour, and the sea must connect to the rest. So \(decided)."
+            return "This sea patch has only one blank neighbor, and the sea must connect to the rest. So \(decided)."
         case .commonGround:
             let n = e.numbers.first ?? 0
             let ways = e.numbers.count > 1 ? e.numbers[1] : 0
@@ -260,8 +260,8 @@ nonisolated enum TechniqueContent {
 
     /// Lesson feedback for a wrong mark on a target cell.
     static func wrongTarget(_ t: Technique, markedSea: Bool) -> String {
-        let colour = markedSea ? "sea" : "land"
-        return "Not \(colour). " + rule(t)
+        let color = markedSea ? "sea" : "land"
+        return "Not \(color). " + rule(t)
     }
 
     static let offTarget = "That cell isn't part of this lesson. Work on the outlined cells."

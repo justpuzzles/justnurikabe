@@ -87,7 +87,7 @@ struct LearnPathView: View {
                 .tint(Theme.accent)
                 .accessibilityIdentifier("continueLearning")
             } else {
-                Text("You've finished the path. Every board is within reach.")
+                Text("You've finished the path. These nine techniques solve every board in the game.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textSoft)
             }

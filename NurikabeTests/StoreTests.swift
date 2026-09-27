@@ -79,6 +79,16 @@ struct EntitlementTests {
                 "the unlock flag must be read inside #if DEBUG")
     }
 
+    @Test func screenshotScenesExistOnlyInDebug() throws {
+        let text = try String(contentsOf: sourceFile("App/ScreenshotScene.swift"), encoding: .utf8)
+        let read = try #require(text.range(of: "ProcessInfo.processInfo.arguments"))
+        let before = text[..<read.lowerBound]
+        let lastIf = try #require(before.range(of: "#if DEBUG", options: .backwards))
+        let lastEnd = before.range(of: "#endif", options: .backwards)
+        #expect(lastEnd == nil || lastEnd!.lowerBound < lastIf.lowerBound)
+        #expect(text.contains("#else\n        return nil"))
+    }
+
     private func sourceFile(_ path: String) -> URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()      // NurikabeTests

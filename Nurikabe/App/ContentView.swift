@@ -14,6 +14,14 @@ struct ContentView: View {
         .sheet(item: paywallBinding) { feature in
             PaywallView(feature: feature)
         }
+        .task {
+            // DEBUG screenshot scenes open their screen the way a tap would:
+            // pushed onto Home after it appears. Launching with the path
+            // already filled left Home's dark bar scheme on the pushed screen.
+            guard let scene = ScreenshotScene.current, !scene.initialPath.isEmpty else { return }
+            try? await Task.sleep(for: .milliseconds(400))
+            path = scene.initialPath
+        }
     }
 
     /// Dismissal goes through `dismiss()`, so there is one way the sheet closes.
@@ -37,3 +45,4 @@ struct ContentView: View {
         }
     }
 }
+

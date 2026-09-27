@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Just Nurikabe</title>
+<meta name="description" content="An island puzzle for iPhone and iPad that teaches its own logic: a rules chapter, nine technique lessons, and hints that draw their argument on your board.">
+<style>
+  /* The app's chart palette (Design/Theme.swift). */
+  :root {
+    --ground: #efeae0; --card: #f8f5ee; --text: #1c2433; --soft: rgba(28,36,51,.72);
+    --sea: #233a5e; --band-text: #f6f1e6; --ochre: #c98a1b; --accent: #233a5e;
+    --hairline: rgba(28,36,51,.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #14171c; --card: #1e232a; --text: #ece6da; --soft: rgba(236,230,218,.72);
+      --ochre: #e0a23a; --accent: #a9c1ec; --hairline: rgba(236,230,218,.14);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--ground); color: var(--text);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  .band { background: var(--sea); color: var(--band-text); padding: 56px 20px 64px; }
+  .band .inner, section, footer { max-width: 760px; margin: 0 auto; }
+  .just { font-size: 22px; opacity: .8; margin: 0; }
+  h1 {
+    margin: 0 0 12px; font-size: clamp(40px, 11vw, 72px); line-height: 1;
+    font-stretch: expanded; font-weight: 800; letter-spacing: .02em;
+  }
+  .lede { font-size: 20px; max-width: 34em; margin: 0; }
+  nav { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 15px; }
+  nav a { color: var(--band-text); opacity: .85; }
+  section { padding: 44px 20px 8px; }
+  h2 { font-size: 26px; margin: 0 0 14px; font-stretch: expanded; letter-spacing: -.005em; }
+  h3 { font-size: 18px; margin: 22px 0 6px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+  .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--hairline); border-radius: 14px; padding: 18px 20px; }
+  .card h3 { margin-top: 0; }
+  .card p { margin: 0; color: var(--soft); font-size: 16px; }
+  .shots { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
+  .shots img {
+    width: 230px; height: auto; flex: none; border-radius: 18px; scroll-snap-align: start;
+    border: 1px solid var(--hairline);
+  }
+  .ochre { color: var(--ochre); font-weight: 600; }
+  footer { padding: 36px 20px 64px; color: var(--soft); font-size: 14px; border-top: 1px solid var(--hairline); margin-top: 40px; }
+</style>
+</head>
+<body>
+<header class="band">
+  <div class="inner">
+    <p class="just">just</p>
+    <h1>NURIKABE</h1>
+    <p class="lede">Paint the sea and let the islands show themselves. An island puzzle for iPhone and iPad that teaches you how to solve it.</p>
+    <nav>
+      <a href="#learn">How it teaches</a>
+      <a href="#shots">Screens</a>
+      <a href="#price">Price</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#help">Help</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section id="learn">
+  <h2>From the first rule to What If</h2>
+  <p>The numbers on a Nurikabe grid are island sizes. Everything that isn't island is sea, the sea has to be one connected piece, and it may never fill a 2×2 square. Those four rules fit on a postcard. Solving a 10×10 board with them takes a handful of arguments that nobody tells you about, and this app is built to tell you.</p>
+  <div class="cards">
+    <div class="card"><h3>Rules on small boards</h3><p>Five short steps, one rule each. A wrong tap names the rule it broke.</p></div>
+    <div class="card"><h3>Nine technique lessons</h3><p>Each one states an argument, works it on a real board with the reasoning drawn, and then hands you two positions.</p></div>
+    <div class="card"><h3>A hint in four taps</h3><p>Where to look, what the technique is called, the argument drawn on your cells, and only then the answer.</p></div>
+    <div class="card"><h3>Seals you earn</h3><p>A deduction you make unaided counts toward that technique. Five of them earn its seal on the path.</p></div>
+  </div>
+  <h3>Boards you can trust</h3>
+  <p>Your device builds each board and proves two things before showing it: there is only one solution, and the nine techniques from the lessons reach it. You never need to guess, and if you're stuck, a named argument is waiting.</p>
+</section>
+
+<section id="shots">
+  <h2>Screens</h2>
+  <div class="shots">
+    <img src="shot-hint.png" alt="A 7×7 game with the hint card open on Only Way Out and the deciding cell outlined in ochre." loading="lazy">
+    <img src="shot-lesson.png" alt="The worked example of the Only Way Out lesson, its argument written under the board." loading="lazy">
+    <img src="shot-path.png" alt="The learning path: the rules chapter done, the first techniques sealed, the rest counting up." loading="lazy">
+    <img src="shot-home.png" alt="Home under the navy sea band: keep learning, today's chart, a new board, continue." loading="lazy">
+    <img src="shot-win.png" alt="A solved board with the finish card: time, a new best, and the techniques the board used." loading="lazy">
+  </div>
+</section>
+
+<section id="price">
+  <h2>What's free and what costs $4.99</h2>
+  <p>Free, with no ads: the whole rules chapter, the first five lessons, 5×5 and 7×7 boards in all five difficulties, and a daily chart with a streak.</p>
+  <p><span class="ochre">The Full Chart</span> is a single purchase. It adds the four advanced lessons, 10×10 boards, and in-game hints that name and draw their argument. It is shareable with Family Sharing, and there's no subscription.</p>
+</section>
+
+<section id="privacy">
+  <h2>Privacy</h2>
+  <p>Just Nurikabe collects no data at all. Your progress stays on your device. The full policy is on <a href="justnurikabe-privacy.html">the privacy page</a>.</p>
+</section>
+
+<section id="help">
+  <h2>Help</h2>
+  <h3>My purchase isn't showing</h3>
+  <p>Open Settings in the app and tap Restore purchase while signed in with the Apple Account that bought it.</p>
+  <h3>Can I play on a plane?</h3>
+  <p>Yes. Boards are made on the device, so nothing needs a connection except buying or restoring.</p>
+  <h3>A board seems impossible</h3>
+  <p>Tap Hint until it names a technique, then open that lesson from the path. If a board still looks wrong, mail me a screenshot and I'll look at it.</p>
+  <h3>Anything else</h3>
+  <p>Write to <a href="mailto:kai.kunze@gmail.com">kai.kunze@gmail.com</a>.</p>
+</section>
+</main>
+
+<footer>
+  Just Nurikabe by Kai Kunze &middot; <a href="justnurikabe-privacy.html">Privacy</a> &middot;
+  <a href="https://kaikunze.de/">kaikunze.de</a>
+</footer>
+</body>
+</html>

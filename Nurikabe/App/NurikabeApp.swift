@@ -39,6 +39,9 @@ struct NurikabeApp: App {
             }
         }
         #endif
+        #if DEBUG
+        ScreenshotScene.current?.seed(progress)
+        #endif
         _progress = State(initialValue: progress)
         _entitlements = State(initialValue: Self.makeEntitlementStore())
         _paywall = State(initialValue: PaywallPresenter())
@@ -51,15 +54,18 @@ struct NurikabeApp: App {
     /// (ReleaseBuildTests checks the flag is read inside the guard).
     private static func makeEntitlementStore() -> EntitlementStore {
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains(Self.screenshotUnlockFlag) {
+        if ProcessInfo.processInfo.arguments.contains(Self.screenshotUnlockFlag)
+            || ScreenshotScene.current != nil {
             return EntitlementStore(source: PreviewEntitlementSource(owned: true))
         }
         #endif
         return EntitlementStore()
     }
 
-    /// Outside the `#if` on purpose — the test has to be able to name it.
+    #if DEBUG
+    /// Inside the guard too, so the string never reaches the shipped binary.
     static let screenshotUnlockFlag = "-NurikabeScreenshotUnlock"
+    #endif
 
     var body: some Scene {
         WindowGroup {

@@ -99,8 +99,7 @@ struct RuleLessonView: View {
                 case .end: game.endStroke()
                 }
             }
-            .frame(maxWidth: 330)
-            .frame(maxWidth: .infinity)
+            .lessonBoardFrame()
             .id(LessonAnchor.board)
             if game.isSolved {
                 Label(TechniqueContent.success(rule), systemImage: "checkmark.circle.fill")

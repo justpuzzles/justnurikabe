@@ -174,7 +174,7 @@ struct HomeView: View {
         switch progress.nextPathStep {
         case .rule(let r)?:
             progress.completedRules.isEmpty
-                ? "The rules in five short steps, then nine lessons that teach you to think like a solver."
+                ? "The rules in five short steps, then nine lessons on the techniques that solve harder boards."
                 : "Next: \(TechniqueContent.title(r))"
         case .lesson(let t)?: "Next lesson: \(TechniqueContent.name(t))"
         case nil: "All nine techniques learned."

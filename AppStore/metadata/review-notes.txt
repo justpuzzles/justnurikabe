@@ -1,0 +1,11 @@
+No account, login or demo credentials are needed. The app works offline.
+
+What makes this Nurikabe different: a teaching path. Learn (the first card on the home screen) opens five short rule steps, then nine technique lessons in order. Each lesson explains one deduction, works an example on a generated board, and asks the player for two more. In games, the Hint button escalates in four steps (where to look, the technique's name, the argument drawn on the board, then filling it in). Every board is proven to have one solution that the built-in solver reaches with the taught techniques. Mastery is credited only for deductions the player makes without a hint.
+
+Purchase: one non-consumable, de.kaikunze.nurikabe.full, $4.99. Free: the rules, the first five lessons, 5×5 and 7×7 boards at every difficulty, and the daily board. The purchase adds the last four lessons, 10×10 boards and the full in-game hint. Locked items stay tappable and open the purchase sheet. Restore is in Settings and on the purchase sheet.
+
+Two deliberate behaviors:
+1. For free players the in-game hint only points out wrong cells. Lessons always explain in full, and so does the first whole puzzle in the rules.
+2. The 10×10 size offers Sharp, Deep and Severe only, because easier 10×10 boards are too rare to generate reliably.
+
+Privacy: no data is collected. Progress and settings stay on the device in UserDefaults (privacy manifest reason CA92.1). There are no analytics, ads or third-party SDKs.
