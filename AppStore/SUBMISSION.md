@@ -1,52 +1,55 @@
 # Just Nurikabe: App Store submission runbook
 
-State as of 2026-09-27: the submission kit is complete locally (metadata,
-screenshots, IAP artwork, support site, privacy page). **Nothing exists in App
-Store Connect yet.** The record has to be created on the web first (§1); the
-rest is then staged by API and stops before any review submission.
+State as of 2026-09-27: **staged in App Store Connect, not submitted.** The iOS
+1.0 version is `PREPARE_FOR_SUBMISSION` with build 1 attached, all metadata and
+screenshots in place, and the IAP `READY_TO_SUBMIT`. No reviewSubmission exists.
+**Three things are left, all Kai's, all on the web (§1).**
 
 ## App record facts
 
-- Name **Just Nurikabe** · bundle `de.kaikunze.nurikabe` · SKU `just-nurikabe-01`
+- ASC App ID **6816718565** · SKU `just-nurikabe-01` · bundle `de.kaikunze.nurikabe`
   · primary locale en-US · team `8H42EZRCCP`
-- ASC App ID: _fill in once created_
-- IAP `de.kaikunze.nurikabe.full`, non-consumable, $4.99, family-shareable,
-  display name **The Full Chart**, ASC id: _fill in_
-- Always pass `--platform IOS` to AppShip (a record can carry several platform
-  versions, and AppShip takes the first one it gets back).
+- The record was created with bundle `de.kaikunze.mathmaze`. It was repointed
+  to `de.kaikunze.nurikabe` (explicit App ID `U72F74JQJ9`, registered for this)
+  on 2026-09-27 **before the first build**. Now that build 1 has landed, the
+  bundle id is locked.
+- The record carries **four platform versions** (iOS, macOS, tvOS, visionOS),
+  all 1.0. Only iOS ships. Always pass `--platform IOS` to AppShip;
+  `AppStore/stage_asc.py` filters for IOS itself.
+- iOS 1.0 version `ee66b82e-2c49-420f-8230-3b17d65ae070`, en-US localization
+  `28668d93-c049-456d-9889-73731b95bc88`, appInfo
+  `ddbd66de-76ea-441b-aaa0-1efe074497d0`.
+- IAP `de.kaikunze.nurikabe.full`, ASC id **6816720258**, non-consumable, $4.99
+  (base USA), family-shareable, display name **The Full Chart**, reference name
+  "Nurikabe Full".
 - `whatsNew` stays empty on 1.0: it returns 409 on a first version.
 
 ## 1. What is left
 
-Kai, before anything else:
-- [ ] **Name check.** Search "Nurikabe" on J-PlatPat and USPTO (classes 9 and
-      28/41) before committing the name. The listing never names a publisher.
-- [ ] **Create the app record** on the web (record creation has no public API):
-      name, bundle, SKU and locale as above.
+- [ ] **Name check** (if not done yet): "Nurikabe" on J-PlatPat and USPTO.
+- [ ] **Add the IAP to the version**: on the iOS 1.0 page, section "In-App
+      Purchases and Subscriptions", add *The Full Chart*. See §2.
+- [ ] **App Privacy → "Data Not Collected"**, then Publish. No public API. It
+      matches `PrivacyInfo.xcprivacy` (UserDefaults, CA92.1) and the policy page.
+- [ ] **Add for Review / Submit** (iOS only; leave macOS, tvOS, visionOS alone).
 
-Then by API (me), reading every change back:
-- [ ] IAP: price, localization (description ≤55 characters, the
-      `IAP_DESCRIPTION` in `iap/generate.py`), review screenshot and promo image.
-- [ ] App info: subtitle, Games › Puzzle + Board, age rating 4+, privacy URL,
-      copyright `2026 Kai Kunze`, `DOES_NOT_USE_THIRD_PARTY_CONTENT`, price Free,
-      all territories.
-- [ ] Version 1.0: description, keywords, promo text, support and marketing URL,
-      review details (contact as on the siblings, `demoAccountRequired=false`,
-      notes from `metadata/review-notes.txt`), release `MANUAL`.
-- [ ] Screenshots: iPhone 6.5" and iPad 12.9", every asset `COMPLETE`.
-- [ ] Build 1.0 (1): archive, export, validate, upload, `VALID`, attach.
-- [ ] Site: repo `kkai/justnurikabe` with **only an orphan `gh-pages`** branch
-      (`index.html`, `justnurikabe-privacy.html`, `shot-*.png`). The source repo
-      stays local, because early commits named the publisher. Wait for 200 on
-      `https://kaikunze.de/justnurikabe/` and the privacy page before those URLs go
-      into ASC.
-
-Kai, on the web, at the end:
-- [ ] **Attach the IAP to the version** ("In-App Purchases and Subscriptions" on
-      the 1.0 page). See §2.
-- [ ] **App Privacy → "Data Not Collected".** No public API. It matches
-      `PrivacyInfo.xcprivacy` (UserDefaults, CA92.1) and the privacy page.
-- [ ] **Add for Review / Submit.**
+Done by API on 2026-09-27 with `AppStore/stage_asc.py`, all read back:
+- [x] Site: `kkai/justnurikabe`, **only** a `gh-pages` branch (no app source; its
+      early commits named the publisher). Local clone `../nurikabe-site`.
+      `https://kaikunze.de/justnurikabe/` and the privacy page return 200.
+- [x] App info: subtitle, Games › Puzzle + Board, age rating (all none/false,
+      same declaration as Hashi), privacy URL, `DOES_NOT_USE_THIRD_PARTY_CONTENT`.
+- [x] Price Free (base USA), available in all 175 territories and new ones.
+- [x] Version: description, keywords, promo text, support and marketing URL,
+      copyright `2026 Kai Kunze`, release `MANUAL`, review contact and notes,
+      `demoAccountRequired=false`.
+- [x] Screenshots: 10 iPhone 6.5" + 10 iPad 12.9", every asset `COMPLETE`.
+- [x] IAP: localization, $4.99 schedule, availability, review screenshot
+      `COMPLETE`, promo image `PREPARE_FOR_SUBMISSION` (healthy).
+- [x] Build 1.0 (1): archived and exported with API-key cloud signing, `.ipa`
+      checked (no `.storekit`, no debug dylibs, privacy manifest present, no
+      screenshot flag strings), `--validate-app` clean, uploaded (delivery
+      `ce4ad533-b246-4513-b19b-989bff628a73`), `VALID`, attached.
 
 ## 2. Traps inherited from the siblings
 
@@ -73,7 +76,7 @@ and block the real one.
 
 | | |
 |---|---|
-| Description / promo / keywords | 1955 / 150 / 97 characters |
+| Description / promo / keywords | 1935 / 150 / 97 characters (as ASC counts) |
 | Subtitle | `Paint the sea, find islands` (27 of 30) |
 | Review notes | `metadata/review-notes.txt`, 1480 characters |
 | Screenshots | 10 iPhone 6.5" (1242×2688) + 10 iPad 12.9" (2048×2732), light then dark, RGB |
