@@ -1,6 +1,6 @@
 # Just Nurikabe
 
-Nurikabe, Nikoli's island puzzle, taught properly. Paint the sea; the islands are
+Nurikabe, the island puzzle, taught properly. Paint the sea; the islands are
 what's left. The app starts with the rules in five short interactive steps, then
 nine technique lessons worked on real boards, and every board it generates is
 proven to have one solution reachable without guessing.

@@ -38,7 +38,7 @@ struct SettingsView: View {
                 }
             }
             Section("About") {
-                Text("Nurikabe is a logic puzzle first published by Nikoli. Every board here has exactly one solution, and every board can be solved by reasoning alone, without guessing.")
+                Text("Every board here has exactly one solution, and every board can be solved by reasoning alone, without guessing.")
                     .font(.footnote)
                     .foregroundStyle(Theme.textSoft)
                 LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")

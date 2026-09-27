@@ -1,6 +1,6 @@
 # CLAUDE.md — Just Nurikabe
 
-iPhone puzzle game (iOS 18.5+) that teaches Nurikabe (Nikoli's island puzzle).
+iPhone puzzle game (iOS 18.5+) that teaches Nurikabe (the island puzzle).
 Clone #5 of the Just Puzzles family (`../kakuro` → `../hashi` → `../numeriqo` →
 `../shikaku`): same architecture and invariants, its own look ("the chart":
 indigo sea band, SF Expanded display, rounded numerals, ochre for teaching;
