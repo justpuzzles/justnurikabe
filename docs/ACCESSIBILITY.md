@@ -85,6 +85,15 @@ Found by the automated audit after the review above, and fixed:
 `xcodebuild test` (iPhone 16 Pro, iOS 18.5), 2026-10-03: 87 unit tests and
 8 audit screens pass with the filters above.
 
+## Follow-up (found on Ginga, same template)
+
+- At AX5 the hint card grew until the board and tools left the screen. The
+  panel now scrolls at accessibility sizes, capped at 40% of the height.
+- The per-size Stats headers (`Section(TechniqueContent.name(size))`) still
+  used the system grey. They now use `listHeaderText()`.
+
+Suite rerun after both, 2026-10-03: all unit tests and 8 audit screens pass.
+
 ## Accessibility Nutrition Labels
 
 These become claimable once this branch ships:

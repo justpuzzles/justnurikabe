@@ -49,7 +49,16 @@ struct GameView: View {
                 VStack(spacing: 14) {
                     header
                     board
-                    panel
+                    // At accessibility sizes the hint and finish cards can be
+                    // taller than the screen; scrolling them keeps the board
+                    // and the tools in view.
+                    if typeSize.isAccessibilitySize {
+                        ScrollView { panel }
+                            .scrollBounceBehavior(.basedOnSize)
+                            .frame(maxHeight: geo.size.height * 0.4)
+                    } else {
+                        panel
+                    }
                     Spacer(minLength: 0)
                     if !game.isSolved { toolbar }
                 }

@@ -33,7 +33,7 @@ struct StatsView: View {
                 Text("A deduction counts when you make it yourself, without a hint, and the solver agrees it follows from the board.").listHeaderText()
             }
             ForEach(BoardSize.allCases) { size in
-                Section(TechniqueContent.name(size)) {
+                Section {
                     ForEach(Difficulty.allCases) { tier in
                         let e = progress.entry(size: size, grade: tier)
                         if e.solved > 0 {
@@ -52,6 +52,8 @@ struct StatsView: View {
                     if Difficulty.allCases.allSatisfy({ progress.entry(size: size, grade: $0).solved == 0 }) {
                         Text("Nothing solved yet.").foregroundStyle(Theme.textSoft)
                     }
+                } header: {
+                    Text(TechniqueContent.name(size)).listHeaderText()
                 }
             }
         }
