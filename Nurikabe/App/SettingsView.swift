@@ -17,9 +17,9 @@ struct SettingsView: View {
                 Toggle("Haptics", isOn: $progress.settings.hapticsEnabled)
                     .onChange(of: progress.settings.hapticsEnabled) { _, on in Haptics.enabled = on }
             } footer: {
-                Text("Broken rules are pools, islands with two numbers, and sea that has been cut off. They're marked in red as soon as they happen.")
+                Text("Broken rules are pools, islands with two numbers, and sea that has been cut off. They're marked in red as soon as they happen.").listHeaderText()
             }
-            Section("Full game") {
+            Section {
                 if entitlements.isUnlocked {
                     Label("Unlocked. Thank you.", systemImage: "checkmark.seal")
                 } else {
@@ -32,15 +32,17 @@ struct SettingsView: View {
                     case .note(let text):
                         Text(text).font(.footnote).foregroundStyle(Theme.textSoft)
                     case .failed(let text):
-                        Text(text).font(.footnote).foregroundStyle(Theme.error)
+                        Text(text).font(.footnote).foregroundStyle(Theme.errorText)
                     case .awaitingApproval:
                         Text("Waiting for approval.").font(.footnote).foregroundStyle(Theme.textSoft)
                     case .idle:
                         EmptyView()
                     }
                 }
-            }
-            Section("About") {
+            } header: {
+                Text("Full game").listHeaderText()
+}
+            Section {
                 Text("Every board has exactly one solution, and you can reach it by reasoning alone.")
                     .font(.footnote)
                     .foregroundStyle(Theme.textSoft)
@@ -53,7 +55,9 @@ struct SettingsView: View {
                     Link("Help and contact", destination: url)
                 }
                 LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")
-            }
+            } header: {
+                Text("About").listHeaderText()
+}
         }
         .scrollContentBackground(.hidden)
         .background(Theme.ground.ignoresSafeArea())

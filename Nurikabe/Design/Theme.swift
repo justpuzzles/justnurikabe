@@ -79,8 +79,10 @@ nonisolated enum Theme {
     /// Clue numerals and the land dot.
     static let numeral = dynamic(light: ThemeRGBA(0x1B2C49), dark: ThemeRGBA(0x1F3357))
     /// A finished island's numeral relaxes to this.
-    static let numeralDone = dynamic(light: ThemeRGBA(0x1B2C49, alpha: 0.42),
-                                     dark: ThemeRGBA(0x1F3357, alpha: 0.46))
+    /// Alpha 0.68: at 0.42 a finished numeral measured 2.4:1 on land
+    /// (docs/ACCESSIBILITY.md). The relaxed weight still carries "done".
+    static let numeralDone = dynamic(light: ThemeRGBA(0x1B2C49, alpha: 0.68),
+                                     dark: ThemeRGBA(0x1F3357, alpha: 0.68))
 
     // MARK: - The sea band (Home's header)
 
@@ -101,11 +103,19 @@ nonisolated enum Theme {
     /// Lighthouse ochre — **teaching only**: hint regions, lesson targets,
     /// the path's progress, the win mark.
     static let ochre = dynamic(light: ThemeRGBA(0xC98A1B), dark: ThemeRGBA(0xE0A23A))
+    /// Ochre for text and small glyphs. Light `ochre` is 2.5:1 on the ground;
+    /// this is 4.9:1 or more.
+    static let ochreText = dynamic(light: ThemeRGBA(0x8A5A0E), dark: ThemeRGBA(0xE0A23A))
+    /// Ochre outlines drawn on land, which is pale in both schemes: `ochre`
+    /// there was 1.9–2.7:1.
+    static let ochreRing = dynamic(light: ThemeRGBA(0x8A5A0E), dark: ThemeRGBA(0x8A5A0E))
     /// Ochre at wash strength, for the region an argument is about.
     static let ochreWash = dynamic(light: ThemeRGBA(0xC98A1B, alpha: 0.30),
                                    dark: ThemeRGBA(0xE0A23A, alpha: 0.34))
     /// Vermilion — a broken rule (pool, merged islands, wrong cell).
     static let error = dynamic(light: ThemeRGBA(0xC4432B), dark: ThemeRGBA(0xE0573C))
+    /// Error text on a card: dark `error` there was 4.2:1.
+    static let errorText = dynamic(light: ThemeRGBA(0xC4432B), dark: ThemeRGBA(0xE87A63))
     static let errorWash = dynamic(light: ThemeRGBA(0xC4432B, alpha: 0.30),
                                    dark: ThemeRGBA(0xE0573C, alpha: 0.36))
 

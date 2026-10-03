@@ -71,7 +71,7 @@ struct PaywallView: View {
             case .note(let text):
                 Text(text).font(.footnote).foregroundStyle(Theme.textSoft)
             case .failed(let text):
-                Text(text).font(.footnote).foregroundStyle(Theme.error)
+                Text(text).font(.footnote).foregroundStyle(Theme.errorText)
             case .idle:
                 EmptyView()
             }

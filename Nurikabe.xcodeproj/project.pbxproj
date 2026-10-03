@@ -6,7 +6,18 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		21B577F5E14D443C5E7ED3D9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CA4A1AFC7C82286C8A5B2270 /* Foundation.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		19FCC44CA95C5D328A37EC73 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7AC24A522E35D8C000111972 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7AC24A592E35D8C000111972;
+			remoteInfo = Nurikabe;
+		};
 		2A05798B30268A2100FA10FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7AC24A522E35D8C000111972 /* Project object */;
@@ -17,19 +28,32 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		2C8529EE83EA4CA25ABC4939 /* NurikabeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NurikabeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7AC24A5A2E35D8C000111972 /* Nurikabe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Nurikabe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7AC24A802E35D8C300111972 /* NurikabeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NurikabeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA4A1AFC7C82286C8A5B2270 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7AC24A5C2E35D8C000111972 /* Nurikabe */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = Nurikabe;
 			sourceTree = "<group>";
 		};
 		7AC24A892E35D8C300111972 /* NurikabeTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = NurikabeTests;
+			sourceTree = "<group>";
+		};
+		9DE080B7A054F7328D6B1C8B /* NurikabeUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			path = NurikabeUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -49,15 +73,33 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8AF0883B992CF5AB9D180786 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				21B577F5E14D443C5E7ED3D9 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2CD6C46E3537011B30D0D6C0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FCC7375A329AA70BDD8FF9D4 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		7AC24A512E35D8C000111972 = {
 			isa = PBXGroup;
 			children = (
 				7AC24A5C2E35D8C000111972 /* Nurikabe */,
 				7AC24A892E35D8C300111972 /* NurikabeTests */,
 				7AC24A5B2E35D8C000111972 /* Products */,
+				2CD6C46E3537011B30D0D6C0 /* Frameworks */,
+				9DE080B7A054F7328D6B1C8B /* NurikabeUITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -66,8 +108,17 @@
 			children = (
 				7AC24A5A2E35D8C000111972 /* Nurikabe.app */,
 				7AC24A802E35D8C300111972 /* NurikabeTests.xctest */,
+				2C8529EE83EA4CA25ABC4939 /* NurikabeUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FCC7375A329AA70BDD8FF9D4 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				CA4A1AFC7C82286C8A5B2270 /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -89,8 +140,6 @@
 				7AC24A5C2E35D8C000111972 /* Nurikabe */,
 			);
 			name = Nurikabe;
-			packageProductDependencies = (
-			);
 			productName = Nurikabe;
 			productReference = 7AC24A5A2E35D8C000111972 /* Nurikabe.app */;
 			productType = "com.apple.product-type.application";
@@ -112,11 +161,30 @@
 				7AC24A892E35D8C300111972 /* NurikabeTests */,
 			);
 			name = NurikabeTests;
-			packageProductDependencies = (
-			);
 			productName = NurikabeTests;
 			productReference = 7AC24A802E35D8C300111972 /* NurikabeTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FE8BE1EC171A873EC8A5DEAC /* NurikabeUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EF051BD89217C018D4AB787B /* Build configuration list for PBXNativeTarget "NurikabeUITests" */;
+			buildPhases = (
+				ECA172F9C161DA91D0B139DD /* Sources */,
+				8AF0883B992CF5AB9D180786 /* Frameworks */,
+				AF1546C5CAB58C334F643A54 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A86B3CC5F82F5B1EB9792A84 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				9DE080B7A054F7328D6B1C8B /* NurikabeUITests */,
+			);
+			name = NurikabeUITests;
+			productName = NurikabeUITests;
+			productReference = 2C8529EE83EA4CA25ABC4939 /* NurikabeUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
@@ -153,6 +221,7 @@
 			targets = (
 				7AC24A592E35D8C000111972 /* Nurikabe */,
 				7AC24A812E35D8C300111972 /* NurikabeTests */,
+				FE8BE1EC171A873EC8A5DEAC /* NurikabeUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -166,6 +235,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		7AC24A842E35D8C300111972 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AF1546C5CAB58C334F643A54 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -189,6 +265,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		ECA172F9C161DA91D0B139DD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -196,6 +279,12 @@
 			isa = PBXTargetDependency;
 			target = 7AC24A592E35D8C000111972 /* Nurikabe */;
 			targetProxy = 2A05798B30268A2100FA10FF /* PBXContainerItemProxy */;
+		};
+		A86B3CC5F82F5B1EB9792A84 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Nurikabe;
+			target = 7AC24A592E35D8C000111972 /* Nurikabe */;
+			targetProxy = 19FCC44CA95C5D328A37EC73 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -434,6 +523,45 @@
 			};
 			name = Release;
 		};
+		9D4F31D460925C845F349487 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8H42EZRCCP;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				PRODUCT_BUNDLE_IDENTIFIER = de.kaikunze.nurikabeUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Nurikabe;
+			};
+			name = Debug;
+		};
+		AFB7F65802A022DD8F882F3E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 8H42EZRCCP;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				PRODUCT_BUNDLE_IDENTIFIER = de.kaikunze.nurikabeUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Nurikabe;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -460,6 +588,15 @@
 			buildConfigurations = (
 				7AC24A872E35D8C300111972 /* Debug */,
 				7AC24A882E35D8C300111972 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EF051BD89217C018D4AB787B /* Build configuration list for PBXNativeTarget "NurikabeUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AFB7F65802A022DD8F882F3E /* Release */,
+				9D4F31D460925C845F349487 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

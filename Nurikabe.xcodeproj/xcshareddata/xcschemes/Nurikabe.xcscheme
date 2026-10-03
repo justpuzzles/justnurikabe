@@ -38,6 +38,16 @@
                ReferencedContainer = "container:Nurikabe.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FE8BE1EC171A873EC8A5DEAC"
+               BuildableName = "NurikabeUITests.xctest"
+               BlueprintName = "NurikabeUITests"
+               ReferencedContainer = "container:Nurikabe.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

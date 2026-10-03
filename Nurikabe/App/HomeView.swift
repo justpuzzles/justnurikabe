@@ -240,7 +240,7 @@ struct HomeView: View {
                 Text(detail).font(.subheadline).foregroundStyle(Theme.textSoft)
                     .fixedSize(horizontal: false, vertical: true)
                 if let note {
-                    Text(note).font(.caption.weight(.semibold)).foregroundStyle(Theme.ochre)
+                    Text(note).font(.caption.weight(.semibold)).foregroundStyle(Theme.ochreText)
                 }
                 Spacer(minLength: 0)
             }
@@ -275,7 +275,7 @@ struct HomeView: View {
             HStack(spacing: 12) {
                 Image(systemName: symbol).foregroundStyle(Theme.accent).frame(width: 24)
                 Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.text)
-                Text(detail).font(.subheadline).foregroundStyle(Theme.textSoft).lineLimit(1)
+                Text(detail).font(.subheadline).foregroundStyle(Theme.textSoft)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(Theme.textSoft)
             }
@@ -346,7 +346,7 @@ struct NewBoardSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Size") {
+                Section {
                     Picker("Size", selection: $size) {
                         ForEach(BoardSize.allCases) { s in
                             Text(TechniqueContent.name(s) + (FeatureGate.isBoardSizeAvailable(s, unlocked: entitlements.isUnlocked) ? "" : " 🔒"))
@@ -354,7 +354,9 @@ struct NewBoardSheet: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                }
+                } header: {
+                    Text("Size").listHeaderText()
+}
                 Section {
                     ForEach(size.tiers) { t in
                         Button { tier = t } label: {
@@ -369,9 +371,9 @@ struct NewBoardSheet: View {
                         }
                     }
                 } header: {
-                    Text("Difficulty")
+                    Text("Difficulty").listHeaderText()
                 } footer: {
-                    if size == .ten { Text("10×10 boards start at Sharp: at this size, easier boards are rare.") }
+                    if size == .ten { Text("10×10 boards start at Sharp: at this size, easier boards are rare.").listHeaderText() }
                 }
             }
             .navigationTitle("New board")

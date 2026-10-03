@@ -104,7 +104,7 @@ struct TechniqueLessonView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(showArgument ? "Worked example" : "Your turn (\(k) of 2)")
                     .font(.headline)
-                    .foregroundStyle(Theme.ochre)
+                    .foregroundStyle(Theme.ochreText)
                 LessonBoardView(session: session,
                                 task: TechniqueContent.lessonTask(technique, count: session.targets.count),
                                 showArgument: showArgument,
@@ -127,7 +127,7 @@ struct TechniqueLessonView: View {
         VStack(alignment: .leading, spacing: 14) {
             Label("Lesson complete", systemImage: "checkmark.seal.fill")
                 .font(Theme.heading)
-                .foregroundStyle(Theme.ochre)
+                .foregroundStyle(Theme.ochreText)
                 .id(LessonAnchor.feedback)
             Text("\(TechniqueContent.name(technique)): \(TechniqueContent.rule(technique))")
                 .foregroundStyle(Theme.text)

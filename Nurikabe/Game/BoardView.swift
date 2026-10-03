@@ -32,6 +32,10 @@ struct BoardView: View {
     var satisfiedClues: Set<Int> = []
     var interactive: Bool = true
     var onStroke: (StrokeEvent) -> Void = { _ in }
+    /// VoiceOver, Switch Control and Voice Control: "Sea", "Dot", "Clear" on a
+    /// cell, without cycling. Nil (lesson boards) offers none, so a lesson's
+    /// own input handling can't be walked around.
+    var onSet: ((Int, Mark) -> Void)? = nil
 
     @State private var lastIndex: Int?
 
@@ -70,7 +74,7 @@ struct BoardView: View {
         let clue = puzzle.clueIndexAt[i]
         let state: String
         if clue >= 0 {
-            state = "number \(puzzle.clues[clue].value)"
+            state = "number \(puzzle.clues[clue].value)" + (satisfiedClues.contains(clue) ? ", island complete" : "")
         } else {
             switch marks[i] {
             case .sea: state = "sea"
@@ -93,6 +97,13 @@ struct BoardView: View {
                 guard interactive, clue < 0 else { return }
                 onStroke(.begin(i))
                 onStroke(.end)
+            }
+            .accessibilityActions {
+                if interactive, clue < 0, let onSet {
+                    if marks[i] != .sea { Button("Sea") { onSet(i, .sea) } }
+                    if marks[i] != .land { Button("Dot") { onSet(i, .land) } }
+                    if marks[i] != .unknown { Button("Clear") { onSet(i, .unknown) } }
+                }
             }
     }
 
@@ -177,16 +188,20 @@ struct BoardView: View {
         for i in overlay.targets {
             let r = rect(i).insetBy(dx: inset, dy: inset)
             context.stroke(Path(roundedRect: r, cornerRadius: cell * 0.12),
-                           with: .color(Theme.ochre), lineWidth: max(2, cell * 0.07))
+                           with: .color(Theme.ochreRing), lineWidth: max(2, cell * 0.07))
         }
         for i in overlay.errors {
             let r = rect(i).insetBy(dx: inset, dy: inset)
             context.stroke(Path(roundedRect: r, cornerRadius: cell * 0.12),
                            with: .color(Theme.error), lineWidth: max(2, cell * 0.07))
+            // A land-coloured inner ring: vermilion alone is 2.3–2.6:1 on sea.
+            let inner = r.insetBy(dx: max(2, cell * 0.07), dy: max(2, cell * 0.07))
+            context.stroke(Path(roundedRect: inner, cornerRadius: cell * 0.08),
+                           with: .color(Theme.land), lineWidth: max(1, cell * 0.03))
         }
         if let t = overlay.trial {
             let r = rect(t).insetBy(dx: cell * 0.22, dy: cell * 0.22)
-            context.stroke(Path(ellipseIn: r), with: .color(Theme.ochre),
+            context.stroke(Path(ellipseIn: r), with: .color(Theme.ochreRing),
                            style: StrokeStyle(lineWidth: max(2, cell * 0.06), dash: [cell * 0.08, cell * 0.06]))
         }
 

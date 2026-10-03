@@ -17,8 +17,12 @@ struct GameView: View {
     /// The techniques the puzzle's solve uses, in ladder order (found once,
     /// off the main actor, when the board is finished).
     @State private var techniquesUsed: [Technique] = []
+    /// The cell a stroke began on, for speaking what a VoiceOver double-tap
+    /// did (it arrives as a one-cell stroke).
+    @State private var strokeCell: Int?
 
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         GeometryReader { geo in
@@ -85,20 +89,67 @@ struct GameView: View {
 
     private var board: some View {
         BoardView(puzzle: game.puzzle, marks: game.marks, overlay: overlay,
-                  satisfiedClues: satisfiedClues, interactive: !game.isSolved) { event in
+                  satisfiedClues: satisfiedClues, interactive: !game.isSolved,
+                  onStroke: { event in
             switch event {
             case .begin(let i):
+                strokeCell = i
                 game.beginStroke(at: i)
                 Haptics.mark()
             case .extend(let i):
+                strokeCell = nil
                 game.extendStroke(to: i)
             case .end:
+                let before = (game.satisfiedClues, game.ruleBreaks)
                 game.endStroke()
                 save()
+                if let i = strokeCell, UIAccessibility.isVoiceOverRunning {
+                    announceMove(i, satisfiedBefore: before.0, breaksBefore: before.1)
+                }
+                strokeCell = nil
             }
-        }
+        }, onSet: { i, mark in assistiveSet(i, to: mark) })
         .padding(.horizontal, 12)
         .animation(Motion.mark, value: game.marks)
+        // Every rung: each tap of Hint swaps the card's words in place.
+        .onChange(of: game.hint) { _, hint in
+            guard let hint, let text = spokenHintText(hint) else { return }
+            BoardSpeech.announce(BoardSpeech.spokenHint(hint, text: text))
+        }
+    }
+
+    /// A cell's accessibility action: set it directly, then say what changed.
+    private func assistiveSet(_ i: Int, to mark: Mark) {
+        let before = (game.satisfiedClues, game.ruleBreaks)
+        game.set(i, to: mark)
+        Haptics.mark()
+        save()
+        announceMove(i, satisfiedBefore: before.0, breaksBefore: before.1)
+    }
+
+    private func announceMove(_ i: Int, satisfiedBefore: Set<Int>, breaksBefore: [Rules.Violation]) {
+        let newBreak = progress.settings.showRuleBreaks
+            ? game.ruleBreaks.first { !breaksBefore.contains($0) }.map(TechniqueContent.ruleBreak)
+            : nil
+        BoardSpeech.announce(BoardSpeech.moveResult(
+            index: i, mark: game.marks[i], puzzle: game.puzzle,
+            newlySatisfied: game.satisfiedClues.subtracting(satisfiedBefore), newBreak: newBreak))
+    }
+
+    /// The words the hint card shows, for speech.
+    private func spokenHintText(_ hint: HintState) -> String? {
+        switch hint {
+        case .mistakes(let cells):
+            let wrong = BoardSpeech.cells(cells.map { Cell(row: $0 / game.puzzle.size, col: $0 % game.puzzle.size) })
+            return "\(TechniqueContent.mistakes(cells.count)) \(wrong)."
+        case .noMistakes: return TechniqueContent.noMistakes
+        case .nudge: return TechniqueContent.nudge
+        case .technique(let step):
+            return "\(TechniqueContent.name(step.technique)). \(TechniqueContent.rule(step.technique))"
+        case .argument(let step):
+            return "\(TechniqueContent.name(step.technique)). \(TechniqueContent.argument(step, puzzle: game.puzzle))"
+        case .apply, .stuck: return TechniqueContent.stuck
+        }
     }
 
     /// What the game has to say: the finish card, a hint, or a broken rule.
@@ -109,7 +160,7 @@ struct GameView: View {
         } else if let hint = game.hint {
             hintCard(hint)
         } else if let breakNote = ruleBreakNote {
-            note(breakNote, colour: Theme.error)
+            note(breakNote, colour: Theme.errorText)
         }
     }
 
@@ -122,8 +173,9 @@ struct GameView: View {
             if progress.settings.showTimer {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(Self.clock(game.elapsed(at: context.date)))
-                        .font(Theme.numberFont(size: 17))
+                        .numberFont(17)
                         .foregroundStyle(Theme.textSoft)
+                        .accessibilityLabel("Time \(Self.spoken(game.elapsed(at: context.date)))")
                 }
             }
         }
@@ -153,7 +205,9 @@ struct GameView: View {
             .frame(minWidth: 56, minHeight: 44)
         }
         .disabled(!enabled)
-        .foregroundStyle(enabled ? Theme.text : Theme.textSoft.opacity(0.5))
+        // textSoft, not faded further: a disabled tool still has to be
+        // readable (the audit measured 0.5 × textSoft at 2.3–3.1:1).
+        .foregroundStyle(enabled ? Theme.text : Theme.textSoft)
     }
 
     private func hintCard(_ hint: HintState) -> some View {
@@ -184,12 +238,16 @@ struct GameView: View {
         }
         .font(.callout)
         .foregroundStyle(Theme.text)
+        // Grow rather than truncate at large text sizes.
+        .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 12))
         .overlay(alignment: .topTrailing) {
             Button { game.dismissHint() } label: {
-                Image(systemName: "xmark").font(.caption.weight(.bold)).padding(10)
+                Image(systemName: "xmark").font(.caption.weight(.bold))
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .foregroundStyle(Theme.textSoft)
             .accessibilityLabel("Close hint")
@@ -213,12 +271,12 @@ struct GameView: View {
         VStack(spacing: 12) {
             Text("Solved").font(Theme.heading).foregroundStyle(Theme.text)
             Text("\(Self.clock(game.elapsed(at: Date()))) · \(game.hintsUsed == 0 ? "no hints" : "\(game.hintsUsed) hint\(game.hintsUsed == 1 ? "" : "s")")")
-                .font(Theme.numberFont(size: 16))
+                .numberFont(16)
                 .foregroundStyle(Theme.textSoft)
             if let line = recordLine {
                 Label(line, systemImage: "rosette")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.ochre)
+                    .foregroundStyle(Theme.ochreText)
             }
             if !techniquesUsed.isEmpty {
                 VStack(spacing: 8) {
@@ -229,13 +287,16 @@ struct GameView: View {
                 }
                 .padding(.top, 2)
             }
-            HStack(spacing: 12) {
+            // Side by side normally; stacked at accessibility sizes, where
+            // "Next board" was cut off.
+            (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))) {
                 if let onNext {
                     Button("Next board", action: onNext).buttonStyle(.borderedProminent).tint(Theme.sea)
                 }
                 Button("Done") { dismiss() }.buttonStyle(.bordered).tint(Theme.accent)
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity)
         .padding(18)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 14))
@@ -264,8 +325,10 @@ struct GameView: View {
         .font(.caption.weight(.medium))
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .foregroundStyle(justMastered ? Theme.land : Theme.text)
+        .foregroundStyle(Theme.text)
         .background(justMastered ? Theme.ochre : Theme.ground, in: Capsule())
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
         if FeatureGate.isLessonAvailable(t, unlocked: entitlements.isUnlocked) {
             NavigationLink(value: Route.lesson(t)) { label }
                 .buttonStyle(.plain)
@@ -351,6 +414,14 @@ struct GameView: View {
         Haptics.success()
         solveRecord = progress.recordSolve(kind: game.kind, grade: game.grade, size: game.size,
                                            seconds: game.elapsed(at: Date()), hintsUsed: game.hintsUsed)
+        let hints = game.hintsUsed == 0 ? "no hints" : "\(game.hintsUsed) hint\(game.hintsUsed == 1 ? "" : "s")"
+        let spoken = "Solved in \(Self.spoken(game.elapsed(at: Date()))), \(hints)."
+            + (recordLine.map { " \($0)." } ?? "")
+        Task {
+            // After the finish card appears, or its arrival cuts this off.
+            try? await Task.sleep(for: .seconds(0.8))
+            BoardSpeech.announce(spoken)
+        }
         let puzzle = game.puzzle
         Task {
             let used = await Task.detached(priority: .utility) { () -> [Technique] in
@@ -360,6 +431,16 @@ struct GameView: View {
             }.value
             techniquesUsed = used
         }
+    }
+
+    /// "4 minutes 7 seconds". VoiceOver reads "4:07" as a time of day.
+    static func spoken(_ seconds: TimeInterval) -> String {
+        let total = max(0, Int(seconds))
+        let (h, m, s) = (total / 3600, (total % 3600) / 60, total % 60)
+        func unit(_ n: Int, _ name: String) -> String { "\(n) \(name)\(n == 1 ? "" : "s")" }
+        if h > 0 { return [unit(h, "hour"), m > 0 ? unit(m, "minute") : nil].compactMap { $0 }.joined(separator: " ") }
+        if m > 0 { return [unit(m, "minute"), s > 0 ? unit(s, "second") : nil].compactMap { $0 }.joined(separator: " ") }
+        return unit(s, "second")
     }
 
     static func clock(_ seconds: TimeInterval) -> String {

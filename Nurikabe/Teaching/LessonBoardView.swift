@@ -109,9 +109,13 @@ struct LessonBoardView: View {
     private var helpButtons: some View {
         HStack(spacing: 16) {
             if !showArgument && !hintShown {
-                Button("Hint") { hintShown = true }
+                Button { hintShown = true } label: {
+                    Text("Hint").frame(minHeight: 44).contentShape(Rectangle())
+                }
             }
-            Button("Show me") { session.reveal() }
+            Button { session.reveal() } label: {
+                Text("Show me").frame(minHeight: 44).contentShape(Rectangle())
+            }
         }
         .font(.callout)
         .tint(Theme.accent)

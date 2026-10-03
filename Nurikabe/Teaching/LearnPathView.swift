@@ -17,7 +17,7 @@ struct LearnPathView: View {
             }
             .listRowBackground(Theme.card)
 
-            Section("Chapter 1 · The rules") {
+            Section {
                 ForEach(RuleStep.allCases) { rule in
                     let unlocked = progress.isRuleUnlocked(rule)
                     Button { path.append(.rule(rule)) } label: {
@@ -28,7 +28,9 @@ struct LearnPathView: View {
                     .disabled(!unlocked)
                     .accessibilityIdentifier("rule-\(rule.rawValue)")
                 }
-            }
+            } header: {
+                Text("Chapter 1 · The rules").listHeaderText()
+}
             .listRowBackground(Theme.card)
 
             Section {
@@ -48,9 +50,9 @@ struct LearnPathView: View {
                     .accessibilityIdentifier("lesson-\(technique.rawValue)")
                 }
             } header: {
-                Text("Chapter 2 · The techniques")
+                Text("Chapter 2 · The techniques").listHeaderText()
             } footer: {
-                Text("Each lesson explains one argument, works an example on a real board, then gives you two to try. Lessons open in order. A seal appears once you've used a technique on your own \(MasteryRules.threshold) times in games.")
+                Text("Each lesson explains one argument, works an example on a real board, then gives you two to try. Lessons open in order. A seal appears once you've used a technique on your own \(MasteryRules.threshold) times in games.").listHeaderText()
             }
             .listRowBackground(Theme.card)
         }
@@ -83,6 +85,8 @@ struct LearnPathView: View {
                     }
                 } label: {
                     Text("Continue: \(title(next))").font(.subheadline.weight(.semibold))
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .tint(Theme.accent)
                 .accessibilityIdentifier("continueLearning")
@@ -113,16 +117,18 @@ struct LearnPathView: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbol(state))
                 .font(.title3)
-                .foregroundStyle(state == .done ? Theme.ochre : Theme.textSoft)
+                .foregroundStyle(state == .done ? Theme.ochreText : Theme.textSoft)
                 .frame(width: 28)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title).font(.body.weight(.medium)).foregroundStyle(Theme.text)
-                Text(subtitle).font(.footnote).foregroundStyle(Theme.textSoft).lineLimit(2)
+                Text(subtitle).font(.footnote).foregroundStyle(Theme.textSoft)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 4)
             if let mastery, mastery > 0 { masteryBadge(mastery) }
         }
-        .opacity(state == .locked ? 0.55 : 1)
+        // No fade: at 0.55 the subtitle fell under 4.5:1. The lock symbol and
+        // the spoken state say "locked".
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
         .accessibilityValue(accessibilityState(state))
@@ -133,7 +139,7 @@ struct LearnPathView: View {
     private func masteryBadge(_ count: Int) -> some View {
         if count >= MasteryRules.threshold {
             Image(systemName: "seal.fill")
-                .foregroundStyle(Theme.ochre)
+                .foregroundStyle(Theme.ochreText)
                 .accessibilityLabel("Mastered")
         } else {
             Text("\(count)/\(MasteryRules.threshold)")

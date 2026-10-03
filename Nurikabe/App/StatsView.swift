@@ -18,19 +18,19 @@ struct StatsView: View {
                         Spacer()
                         if count >= MasteryRules.threshold {
                             Label("Mastered", systemImage: "seal.fill")
-                                .foregroundStyle(Theme.ochre)
+                                .foregroundStyle(Theme.ochreText)
                                 .font(.subheadline.weight(.semibold))
                         } else {
                             Text("\(count) of \(MasteryRules.threshold)")
-                                .font(Theme.numberFont(size: 15))
+                                .numberFont(15)
                                 .foregroundStyle(Theme.textSoft)
                         }
                     }
                 }
             } header: {
-                Text("Mastery")
+                Text("Mastery").listHeaderText()
             } footer: {
-                Text("A deduction counts when you make it yourself, without a hint, and the solver agrees it follows from the board.")
+                Text("A deduction counts when you make it yourself, without a hint, and the solver agrees it follows from the board.").listHeaderText()
             }
             ForEach(BoardSize.allCases) { size in
                 Section(TechniqueContent.name(size)) {
@@ -43,7 +43,7 @@ struct StatsView: View {
                                 Text("\(e.solved) solved").foregroundStyle(Theme.textSoft)
                                 if let best = e.bestSeconds {
                                     Text("best \(GameView.clock(best))")
-                                        .font(Theme.numberFont(size: 15))
+                                        .numberFont(15)
                                         .foregroundStyle(Theme.text)
                                 }
                             }
@@ -64,7 +64,7 @@ struct StatsView: View {
         HStack {
             Text(label).foregroundStyle(Theme.text)
             Spacer()
-            Text(value).font(Theme.numberFont(size: 17)).foregroundStyle(Theme.text)
+            Text(value).numberFont(17).foregroundStyle(Theme.text)
         }
     }
 }

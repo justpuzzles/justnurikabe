@@ -7,6 +7,7 @@ struct RuleLessonView: View {
     @Binding var path: [Route]
 
     @Environment(ProgressStore.self) private var progress
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var card = 0
     @State private var session: LessonSession?
     @State private var game: NurikabeGame?
@@ -34,7 +35,7 @@ struct RuleLessonView: View {
                         .font(.body)
                         .foregroundStyle(i == card ? Theme.text : Theme.textSoft)
                         .fixedSize(horizontal: false, vertical: true)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .bottom)))
                 }
                 if onBoard {
                     boardSection
