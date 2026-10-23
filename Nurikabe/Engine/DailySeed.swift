@@ -20,16 +20,26 @@ nonisolated struct DayKey: Hashable, Codable, Sendable, Comparable, CustomString
         self.day = day
     }
 
+    /// Gregorian in the device's time zone. The daily still turns over at the
+    /// player's midnight, but year, month and day are always Gregorian, so a
+    /// phone set to the Japanese or Buddhist calendar gets the same board and
+    /// weekday as everyone else.
+    static var localCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        return calendar
+    }
+
     /// The day `date` falls on in `calendar` (local time by default: a
     /// player's daily changes at their midnight).
-    init(_ date: Date, calendar: Calendar = .current) {
+    init(_ date: Date, calendar: Calendar = DayKey.localCalendar) {
         let parts = calendar.dateComponents([.year, .month, .day], from: date)
         year = parts.year ?? 2026
         month = parts.month ?? 1
         day = parts.day ?? 1
     }
 
-    static func today(calendar: Calendar = .current) -> DayKey { DayKey(Date(), calendar: calendar) }
+    static func today(calendar: Calendar = DayKey.localCalendar) -> DayKey { DayKey(Date(), calendar: calendar) }
 
     static func < (a: DayKey, b: DayKey) -> Bool {
         (a.year, a.month, a.day) < (b.year, b.month, b.day)

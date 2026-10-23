@@ -142,3 +142,23 @@ struct DailySeedTests {
         #expect(DayKey(year: 2027, month: 1, day: 1).previous == DayKey(year: 2026, month: 12, day: 31))
     }
 }
+
+@Suite("Day key calendar")
+struct DayKeyCalendarTests {
+    /// The daily is keyed on Gregorian Y-M-D whatever calendar the phone uses;
+    /// a Japanese-calendar year (Reiwa 8) would otherwise seed a different board.
+    @Test func defaultCalendarIsGregorianLocalTime() {
+        #expect(DayKey.localCalendar.identifier == .gregorian)
+        #expect(DayKey.localCalendar.timeZone == TimeZone.current)
+        let date = Date(timeIntervalSince1970: 1_790_000_000)
+        let parts = DayKey.localCalendar.dateComponents([.year, .month, .day], from: date)
+        #expect(DayKey(date) == DayKey(year: parts.year!, month: parts.month!, day: parts.day!))
+    }
+
+    @Test func otherCalendarsGiveOtherYears() {
+        var japanese = Calendar(identifier: .japanese)
+        japanese.timeZone = .current
+        let date = Date(timeIntervalSince1970: 1_790_000_000)
+        #expect(DayKey(date, calendar: japanese) != DayKey(date))
+    }
+}
