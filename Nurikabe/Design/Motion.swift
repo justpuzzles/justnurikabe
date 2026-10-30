@@ -16,8 +16,15 @@ nonisolated enum Motion {
     /// Lesson feedback cards sliding in.
     static let feedback = Animation.spring(response: 0.32, dampingFraction: 0.82)
 
-    /// The finished board's sea settling into one colour.
-    static let win = Animation.easeInOut(duration: 0.8)
+    /// The win, "the sea floods in" (`SeaFlood`, drawn by `BoardView` on a
+    /// TimelineView clock, so these are seconds rather than Animations):
+    /// sea cells start filling from the border over `winStagger`, each takes
+    /// `winCellFill`, then the islands lift over `winLift`. ≈0.9 s in all.
+    static let winStagger: TimeInterval = 0.4
+    static let winCellFill: TimeInterval = 0.25
+    static let winLift: TimeInterval = 0.25
+    /// Reduce Motion: the solved look crossfades in, nothing travels.
+    static let winCrossfade: TimeInterval = 0.3
 
     /// Chrome transitions (sheets, banners).
     static let chrome = Animation.easeInOut(duration: 0.22)

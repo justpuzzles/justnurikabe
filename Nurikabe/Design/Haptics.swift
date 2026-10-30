@@ -14,6 +14,7 @@ enum Haptics {
 
     #if canImport(UIKit)
     private static let light = UIImpactFeedbackGenerator(style: .light)
+    private static let soft = UIImpactFeedbackGenerator(style: .soft)
     private static let notification = UINotificationFeedbackGenerator()
     #endif
 
@@ -22,6 +23,14 @@ enum Haptics {
         #if canImport(UIKit)
         guard enabled else { return }
         light.impactOccurred(intensity: 0.5)
+        #endif
+    }
+
+    /// An island closed during play.
+    static func islandClosed() {
+        #if canImport(UIKit)
+        guard enabled else { return }
+        soft.impactOccurred()
         #endif
     }
 

@@ -175,3 +175,60 @@ struct HintTests {
         #expect(g.isSolved)
     }
 }
+
+@Suite("Sea flood")
+struct SeaFloodTests {
+
+    private func marks(_ rows: [String]) -> [Mark] {
+        rows.joined().map { $0 == "#" ? Mark.sea : .land }
+    }
+
+    @Test func floodStepsThroughTheSeaFromTheBorder() {
+        // A sea ring around one island; the inner arm is two steps in.
+        let m = marks(["####",
+                       "#..#",
+                       "#.##",
+                       "####"])
+        let d = SeaFlood.distances(marks: m, size: 4)
+        #expect(d[0] == 0 && d[3] == 0 && d[15] == 0)
+        #expect(d[5] == -1 && d[9] == -1)
+        #expect(d[10] == 1)     // (2,2) touches border sea at (2,3) and (3,2)
+    }
+
+    @Test func aSeaOffTheBorderStartsNearestTheEdge() {
+        let m = marks(["....",
+                       ".##.",
+                       ".#..",
+                       "...."])
+        let d = SeaFlood.distances(marks: m, size: 4)
+        #expect(d[5] == 0 && d[6] == 0 && d[9] == 0)
+        #expect(d.filter { $0 >= 0 }.count == 3)
+    }
+
+    @Test func cellsFillInBorderOrderAndTheLiftComesLast() {
+        let m = marks(["####",
+                       "#..#",
+                       "#.##",
+                       "####"])
+        let start = Date(timeIntervalSinceReferenceDate: 0)
+        let f = SeaFlood(marks: m, size: 4, start: start, reduceMotion: false)
+        let early = start.addingTimeInterval(0.1)
+        #expect(f.fill(0, at: early) > f.fill(10, at: early))
+        #expect(f.lift(at: start.addingTimeInterval(SeaFlood.stagger + SeaFlood.cellFill)) == 0)
+        let end = start.addingTimeInterval(f.duration)
+        #expect(f.isFinished(at: end))
+        #expect(m.indices.allSatisfy { f.fill($0, at: end) == 1 })
+        #expect(f.lift(at: end) == 1)
+        #expect(f.duration <= 1.2)
+    }
+
+    @Test func reduceMotionIsOneCrossfadeWithNoStagger() {
+        let m = marks(["####", "#..#", "#.##", "####"])
+        let start = Date(timeIntervalSinceReferenceDate: 0)
+        let f = SeaFlood(marks: m, size: 4, start: start, reduceMotion: true)
+        let mid = start.addingTimeInterval(SeaFlood.crossfade / 2)
+        #expect(f.fill(0, at: mid) == f.fill(10, at: mid))
+        #expect(f.lift(at: mid) == f.fill(0, at: mid))
+        #expect(SeaFlood.settled(marks: m, size: 4).isFinished(at: .now))
+    }
+}

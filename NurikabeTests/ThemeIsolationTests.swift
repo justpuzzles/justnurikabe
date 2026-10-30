@@ -16,7 +16,11 @@ private nonisolated func themeColors() -> [(String, Color)] {
 }
 
 private nonisolated func motionTokens() -> [Animation] {
-    [Motion.mark, Motion.hintWash, Motion.feedback, Motion.win, Motion.chrome]
+    [Motion.mark, Motion.hintWash, Motion.feedback, Motion.chrome]
+}
+
+private nonisolated func winTimings() -> [TimeInterval] {
+    [Motion.winStagger, Motion.winCellFill, Motion.winLift, Motion.winCrossfade]
 }
 
 private nonisolated let mainQueueKey: DispatchSpecificKey<Bool> = {
@@ -35,7 +39,8 @@ private nonisolated func rgba(_ color: UIColor) -> [CGFloat] {
 
     @Test func tokensAreReachableFromANonisolatedContext() {
         #expect(themeColors().count == 17)
-        #expect(motionTokens().count == 5)
+        #expect(motionTokens().count == 4)
+        #expect(winTimings().allSatisfy { $0 > 0 })
     }
 
     @Test func dynamicColorsResolveOffTheMainThread() async {

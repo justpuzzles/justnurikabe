@@ -31,6 +31,9 @@ struct BoardView: View {
     /// Clue indices whose island is complete and correct (numeral relaxes).
     var satisfiedClues: Set<Int> = []
     var interactive: Bool = true
+    /// The solved board's sea flooding in, then its islands lifting (nil
+    /// while playing, and on every lesson board).
+    var flood: SeaFlood? = nil
     var onStroke: (StrokeEvent) -> Void = { _ in }
     /// VoiceOver, Switch Control and Voice Control: "Sea", "Dot", "Clear" on a
     /// cell, without cycling. Nil (lesson boards) offers none, so a lesson's
@@ -43,8 +46,11 @@ struct BoardView: View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
             let cell = side / CGFloat(puzzle.size)
-            Canvas { context, _ in
-                draw(in: &context, cell: cell)
+            // The clock runs only while the flood is moving.
+            TimelineView(.animation(paused: flood.map { $0.isFinished(at: .now) } ?? true)) { timeline in
+                Canvas { context, _ in
+                    draw(in: &context, cell: cell, now: timeline.date)
+                }
             }
             .frame(width: side, height: side)
             .contentShape(Rectangle())
@@ -135,7 +141,7 @@ struct BoardView: View {
 
     // MARK: Drawing
 
-    private func draw(in context: inout GraphicsContext, cell: CGFloat) {
+    private func draw(in context: inout GraphicsContext, cell: CGFloat, now: Date) {
         let n = puzzle.size
         let clueAt = puzzle.clueIndexAt
         func rect(_ i: Int) -> CGRect {
@@ -165,6 +171,8 @@ struct BoardView: View {
             lines.move(to: CGPoint(x: 0, y: p)); lines.addLine(to: CGPoint(x: full.maxX, y: p))
         }
         context.stroke(lines, with: .color(Theme.grid), lineWidth: 1)
+
+        if let flood { drawFlood(flood, in: &context, cell: cell, now: now, lines: lines, rect: rect) }
 
         // Dots and numerals.
         let dotRadius = max(2.5, cell * 0.08)
@@ -207,6 +215,41 @@ struct BoardView: View {
 
         // Frame.
         context.stroke(Path(full.insetBy(dx: 1, dy: 1)), with: .color(Theme.sea), lineWidth: 2)
+    }
+
+    /// The win: each sea cell fills in its turn (a pale crest growing from
+    /// its centre, then the sea washing over the grid lines so the whole sea
+    /// reads as one body of water); then the islands lift on a soft shadow.
+    /// Reduce Motion: the same end state, crossfaded, with no crest.
+    private func drawFlood(_ flood: SeaFlood, in context: inout GraphicsContext, cell: CGFloat,
+                           now: Date, lines: Path, rect: (Int) -> CGRect) {
+        for i in marks.indices where marks[i] == .sea {
+            let p = flood.fill(i, at: now)
+            guard p > 0 else { continue }
+            let r = rect(i)
+            context.fill(Path(r.insetBy(dx: -0.5, dy: -0.5)), with: .color(Theme.sea.opacity(p)))
+            if !flood.reduceMotion, p < 1 {
+                let crest = r.insetBy(dx: r.width * (1 - p) / 2, dy: r.height * (1 - p) / 2)
+                context.fill(Path(roundedRect: crest, cornerRadius: crest.width * 0.3),
+                             with: .color(Theme.land.opacity(0.35 * sin(.pi * p))))
+            }
+        }
+        let lift = flood.lift(at: now)
+        guard lift > 0 else { return }
+        var land = Path()
+        for i in marks.indices where marks[i] != .sea {
+            land.addRect(rect(i).insetBy(dx: -0.5, dy: -0.5))
+        }
+        context.drawLayer { layer in
+            layer.addFilter(.shadow(color: .black.opacity(0.4 * lift),
+                                    radius: max(2, cell * 0.08) * lift, x: 0, y: max(1, cell * 0.04) * lift))
+            layer.fill(land, with: .color(Theme.land))
+        }
+        // The islands keep their own grid.
+        context.drawLayer { layer in
+            layer.clip(to: land)
+            layer.stroke(lines, with: .color(Theme.grid), lineWidth: 1)
+        }
     }
 
     private var accessibilitySummary: String {

@@ -20,6 +20,12 @@ struct GameView: View {
     /// The cell a stroke began on, for speaking what a VoiceOver double-tap
     /// did (it arrives as a one-cell stroke).
     @State private var strokeCell: Int?
+    /// The win moment, started by the solving move. Nil on a board that was
+    /// already solved when it opened: that one draws the settled look.
+    @State private var flood: SeaFlood?
+    /// The finish card waits for the flood (or a tap that skips it).
+    @State private var cardShown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -92,6 +98,15 @@ struct GameView: View {
         .onChange(of: game.isSolved) { _, solved in
             if solved { finish() }
         }
+        // While the sea floods in, a tap anywhere skips to the card.
+        .overlay {
+            if flood != nil && !cardShown {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { showCard() }
+                    .accessibilityHidden(true)
+            }
+        }
     }
 
     // MARK: Pieces
@@ -99,6 +114,7 @@ struct GameView: View {
     private var board: some View {
         BoardView(puzzle: game.puzzle, marks: game.marks, overlay: overlay,
                   satisfiedClues: satisfiedClues, interactive: !game.isSolved,
+                  flood: flood ?? (game.isSolved ? .settled(marks: game.marks, size: game.puzzle.size) : nil),
                   onStroke: { event in
             switch event {
             case .begin(let i):
@@ -112,6 +128,7 @@ struct GameView: View {
                 let before = (game.satisfiedClues, game.ruleBreaks)
                 game.endStroke()
                 save()
+                moveHaptic(satisfiedBefore: before.0, breaksBefore: before.1)
                 if let i = strokeCell, UIAccessibility.isVoiceOverRunning {
                     announceMove(i, satisfiedBefore: before.0, breaksBefore: before.1)
                 }
@@ -133,7 +150,19 @@ struct GameView: View {
         game.set(i, to: mark)
         Haptics.mark()
         save()
+        moveHaptic(satisfiedBefore: before.0, breaksBefore: before.1)
         announceMove(i, satisfiedBefore: before.0, breaksBefore: before.1)
+    }
+
+    /// After a move: a soft bump when an island closes, a warning when a rule
+    /// newly breaks (only if rule breaks are shown). The win has its own.
+    private func moveHaptic(satisfiedBefore: Set<Int>, breaksBefore: [Rules.Violation]) {
+        guard !game.isSolved else { return }
+        if progress.settings.showRuleBreaks, game.ruleBreaks.contains(where: { !breaksBefore.contains($0) }) {
+            Haptics.warn()
+        } else if !game.satisfiedClues.subtracting(satisfiedBefore).isEmpty {
+            Haptics.islandClosed()
+        }
     }
 
     private func announceMove(_ i: Int, satisfiedBefore: Set<Int>, breaksBefore: [Rules.Violation]) {
@@ -165,7 +194,8 @@ struct GameView: View {
     @ViewBuilder
     private var panel: some View {
         if game.isSolved {
-            finishCard
+            // A board opened already solved shows its card at once.
+            if cardShown || flood == nil { finishCard.transition(.opacity) }
         } else if let hint = game.hint {
             hintCard(hint)
         } else if let breakNote = ruleBreakNote {
@@ -402,8 +432,13 @@ struct GameView: View {
         case .hint?:
             for _ in 0..<3 { game.advanceHint(policy: .full) }
         case .win?:
-            if let last = game.marks.indices.first(where: { game.marks[$0] == .unknown }) {
-                game.set(last, to: game.puzzle.solution[last] ? .land : .sea)
+            // A beat after the screen settles, so the flood can be watched
+            // (and recorded) before the card.
+            Task {
+                try? await Task.sleep(for: .seconds(1.5))
+                if let last = game.marks.indices.first(where: { game.marks[$0] == .unknown }) {
+                    game.set(last, to: game.puzzle.solution[last] ? .land : .sea)
+                }
             }
         default:
             break
@@ -420,7 +455,12 @@ struct GameView: View {
     private func finish() {
         guard !recorded else { return }
         recorded = true
-        Haptics.success()
+        let sea = SeaFlood(marks: game.marks, size: game.puzzle.size, start: .now, reduceMotion: reduceMotion)
+        flood = sea
+        Task {
+            try? await Task.sleep(for: .seconds(sea.duration))
+            showCard()
+        }
         solveRecord = progress.recordSolve(kind: game.kind, grade: game.grade, size: game.size,
                                            seconds: game.elapsed(at: Date()), hintsUsed: game.hintsUsed)
         let hints = game.hintsUsed == 0 ? "no hints" : "\(game.hintsUsed) hint\(game.hintsUsed == 1 ? "" : "s")"
@@ -428,7 +468,7 @@ struct GameView: View {
             + (recordLine.map { " \($0)." } ?? "")
         Task {
             // After the finish card appears, or its arrival cuts this off.
-            try? await Task.sleep(for: .seconds(0.8))
+            try? await Task.sleep(for: .seconds(sea.duration + 0.8))
             BoardSpeech.announce(spoken)
         }
         let puzzle = game.puzzle
@@ -440,6 +480,16 @@ struct GameView: View {
             }.value
             techniquesUsed = used
         }
+    }
+
+    /// The end of the win moment, by the clock or by a tap: the haptic, then
+    /// the card. Runs once.
+    private func showCard() {
+        guard flood != nil, !cardShown else { return }
+        Haptics.success()
+        // A skip jumps the board to its settled look.
+        flood?.start = .distantPast
+        withAnimation(Motion.chrome) { cardShown = true }
     }
 
     /// "4 minutes 7 seconds". VoiceOver reads "4:07" as a time of day.
