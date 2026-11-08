@@ -7,7 +7,11 @@ iOS 1.1 version `1be7dcd7-03fd-41b6-8edf-866074d38ce0`, release AFTER_APPROVAL.
 Description, keywords, URLs, review notes and both screenshot sets (iPhone 6.5"
 10, iPad 12.9" 10) carried over from 1.0; promotional text did not and was
 pushed again. What's New is from `metadata/whatsnew-1.1.txt`. Build 3 (iOS 18.0
-minimum) was uploaded from `main` at 1156cb3. To stage again from scratch:
+minimum, `ee023ec1-9d16-41e8-bf97-50498dfd7b42`, VALID) was uploaded from `main` at
+1156cb3 and is attached. The readiness gate passed after the age rating got
+Apple's new `socialMedia` answer (false, now in `step_info`). **DRAFT review
+submission `d6b58464-0a97-4910-8816-b5b7d2ae3728` holds the version
+(READY_FOR_REVIEW, not submitted).** To stage again from scratch:
 
 ```bash
 python3 AppStore/stage_asc.py new-version whatsnew attach gate status

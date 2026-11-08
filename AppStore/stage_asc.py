@@ -94,7 +94,7 @@ def step_info():
             "profanityOrCrudeHumor", "sexualContentGraphicAndNudity", "sexualContentOrNudity",
             "violenceCartoonOrFantasy", "violenceRealistic", "violenceRealisticProlongedGraphicOrSadistic"]
     false = ["advertising", "ageAssurance", "gambling", "healthOrWellnessTopics", "lootBox",
-             "messagingAndChat", "parentalControls", "unrestrictedWebAccess", "userGeneratedContent"]
+             "messagingAndChat", "parentalControls", "socialMedia", "unrestrictedWebAccess", "userGeneratedContent"]
     attrs = {k: "NONE" for k in none} | {k: False for k in false}
     call("PATCH", f"ageRatingDeclarations/{ai}", body={"data": {
         "type": "ageRatingDeclarations", "id": ai, "attributes": attrs}})
