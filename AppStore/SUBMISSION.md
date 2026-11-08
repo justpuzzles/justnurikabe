@@ -1,6 +1,29 @@
 # Just Nurikabe: App Store submission runbook
 
-State as of 2026-09-27: **staged in App Store Connect, not submitted.** The iOS
+## 1.1 (3), staged 2026-11-08
+
+**1.0 has been live since 2026-09-27 (READY_FOR_SALE, IAP APPROVED, never rejected).**
+iOS 1.1 version `1be7dcd7-03fd-41b6-8edf-866074d38ce0`, release AFTER_APPROVAL.
+Description, keywords, URLs, review notes and both screenshot sets (iPhone 6.5"
+10, iPad 12.9" 10) carried over from 1.0; promotional text did not and was
+pushed again. What's New is from `metadata/whatsnew-1.1.txt`. Build 3 (iOS 18.0
+minimum) was uploaded from `main` at 1156cb3. To stage again from scratch:
+
+```bash
+python3 AppStore/stage_asc.py new-version whatsnew attach gate status
+```
+
+`gate` creates a DRAFT reviewSubmission holding the version (Apple's readiness
+check); it never submits. To submit: Submit for Review on the web, or
+`PATCH reviewSubmissions/<id>` with `attributes.submitted = true`. The IAP is
+already approved and isn't part of this submission.
+
+The site (`../nurikabe-site`, gh-pages of kkai/justnurikabe) has carried the App
+Store badge since 2026-11-08, in the header and under the price.
+
+---
+
+1.0 history. State as of 2026-09-27: **staged in App Store Connect, not submitted.** The iOS
 1.0 version is `PREPARE_FOR_SUBMISSION` with build 1 attached, all metadata and
 screenshots in place, and the IAP `READY_TO_SUBMIT`. No reviewSubmission exists.
 **Three things are left, all Kai's, all on the web (§1).**

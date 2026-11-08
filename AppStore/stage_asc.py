@@ -15,6 +15,14 @@ Steps (each reads its result back and prints it):
   attach       attach the newest VALID build to the version
   status       read everything back
 
+1.1 steps (2026-11-08):
+
+  new-version  create the iOS 1.1 version (AFTER_APPROVAL); ASC carries the
+               1.0 description, keywords, URLs and screenshots over
+  whatsnew     What's New from metadata/whatsnew-1.1.txt
+  gate         Apple's readiness check: a DRAFT reviewSubmission with the
+               version as its item. Not submitted; Kai submits.
+
 Credentials come from studio/appstoreconnect (asc.py); no ids or keys live here.
 Nothing in this script creates a reviewSubmission: that step is Kai's.
 """
@@ -49,9 +57,14 @@ def text(name):
     return open(os.path.join(META, name), encoding="utf-8").read().strip()
 
 
+LIVE = {"READY_FOR_SALE", "REPLACED_WITH_NEW_VERSION", "REMOVED_FROM_SALE"}
+
+
 def ios_version():
+    """The iOS version being prepared (1.1 once it exists), else the newest one."""
     r = call("GET", f"apps/{APP}/appStoreVersions", {"filter[platform]": "IOS"})
-    return r["data"][0]["id"]
+    open_ = [v for v in r["data"] if v["attributes"]["appStoreState"] not in LIVE]
+    return (open_ or r["data"])[0]["id"]
 
 
 def app_info():
@@ -302,7 +315,53 @@ def step_status():
     print("review submissions:", [(s["id"], s["attributes"].get("state")) for s in subs.get("data", [])])
 
 
-STEPS = {"info": step_info, "urls": step_urls, "version": step_version, "price": step_price,
+NEXT = "1.1"
+
+
+def step_new_version():
+    r = call("GET", f"apps/{APP}/appStoreVersions", {"filter[platform]": "IOS"})
+    have = [v for v in r["data"] if v["attributes"]["versionString"] == NEXT]
+    if have:
+        print("version exists", have[0]["id"], have[0]["attributes"]["appStoreState"])
+        return
+    v = call("POST", "appStoreVersions", body={"data": {
+        "type": "appStoreVersions",
+        "attributes": {"platform": "IOS", "versionString": NEXT, "releaseType": "AFTER_APPROVAL",
+                       "copyright": "2026 Kai Kunze"},
+        "relationships": {"app": {"data": {"type": "apps", "id": APP}}}}})
+    print("created", v["data"]["id"])
+
+
+def step_whatsnew():
+    vloc = one(f"appStoreVersions/{ios_version()}/appStoreVersionLocalizations")
+    body = text(f"whatsnew-{NEXT}.txt")
+    assert len(body) <= 4000
+    call("PATCH", f"appStoreVersionLocalizations/{vloc}", body={"data": {
+        "type": "appStoreVersionLocalizations", "id": vloc, "attributes": {"whatsNew": body}}})
+    got = call("GET", f"appStoreVersionLocalizations/{vloc}")["data"]["attributes"]["whatsNew"]
+    print("whatsNew matches file:", got == body, len(got), "chars")
+
+
+def step_gate():
+    v = ios_version()
+    subs = call("GET", "reviewSubmissions", {"filter[app]": APP, "filter[platform]": "IOS"})["data"]
+    draft = next((x for x in subs if x["attributes"]["state"] in ("READY_FOR_REVIEW", "DRAFT")), None)
+    sid = draft["id"] if draft else call("POST", "reviewSubmissions", body={"data": {
+        "type": "reviewSubmissions", "attributes": {"platform": "IOS"},
+        "relationships": {"app": {"data": {"type": "apps", "id": APP}}}}})["data"]["id"]
+    items = call("GET", f"reviewSubmissions/{sid}/items")["data"]
+    if not items:
+        r = call("POST", "reviewSubmissionItems", ok=False, body={"data": {
+            "type": "reviewSubmissionItems", "relationships": {
+                "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": sid}},
+                "appStoreVersion": {"data": {"type": "appStoreVersions", "id": v}}}}})
+        if "HTTP_ERROR" in r:
+            raise SystemExit(f"gate refused (submission {sid} kept, empty):\n{json.dumps(r, indent=1)[:4000]}")
+    state = call("GET", f"appStoreVersions/{v}")["data"]["attributes"]["appStoreState"]
+    print("gate passed; DRAFT submission", sid, "version state", state, "(not submitted)")
+
+
+STEPS = {"new-version": step_new_version, "whatsnew": step_whatsnew, "gate": step_gate, "info": step_info, "urls": step_urls, "version": step_version, "price": step_price,
          "iap": step_iap, "iap-images": step_iap_images, "screenshots": step_screenshots,
          "attach": step_attach, "status": step_status}
 
