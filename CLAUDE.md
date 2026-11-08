@@ -1,6 +1,6 @@
 # CLAUDE.md — Just Nurikabe
 
-iPhone puzzle game (iOS 18.5+) that teaches Nurikabe (the island puzzle).
+iPhone and iPad puzzle game (iOS 18.0+ since 1.1; simulators still pin OS=18.5) that teaches Nurikabe (the island puzzle).
 Clone #5 of the Just Puzzles family (`../kakuro` → `../hashi` → `../numeriqo` →
 `../shikaku`): same architecture and invariants, its own look ("the chart":
 indigo sea band, SF Expanded display, rounded numerals, ochre for teaching;
@@ -88,5 +88,5 @@ on any sentence shared with a sibling).
 
 Swift 6, Swift Testing, MV with `@Observable` (no ViewModels), no force unwraps in
 app code. Team `8H42EZRCCP`, bundle `de.kaikunze.nurikabe`, product
-`de.kaikunze.nurikabe.full`, display name "Just Nurikabe". Not registered in App
-Store Connect yet.
+`de.kaikunze.nurikabe.full`, display name "Just Nurikabe". App Store Connect app
+6816718565; 1.0 live since 2026-09-27.

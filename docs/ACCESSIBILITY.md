@@ -104,3 +104,18 @@ These become claimable once this branch ships:
 - Dark Interface
 - Differentiate Without Color Alone
 - Reduced Motion
+
+## 1.1 (2026-11-08): New board sheet
+
+- The size segments say "locked" in words on a free copy (the 🔒 glyph stays
+  for the eye), and the chosen difficulty row carries `.isSelected`.
+  `testNewBoardSheetSpeaksLockAndSelection` checks both on a locked launch
+  (any screenshot scene or `-NurikabeScreenshotUnlock` unlocks the app).
+- Its audit reports, all with no element attached, are accepted in that test
+  only: Dynamic Type / clipped text from the system Form and the bar's
+  Cancel/Start (the AX5 screenshot from `testNewBoardSheetAtLargestTextSize`
+  shows every row and header scaling with nothing cut), and one contrast report
+  whose element screenshot is the SIZE header, measured at 7.1:1.
+- Touch strokes now compare against the board as it was when the stroke
+  began, so the island-closed haptic and the spoken move result (VoiceOver
+  double-taps arrive as one-cell strokes) report what the stroke changed.

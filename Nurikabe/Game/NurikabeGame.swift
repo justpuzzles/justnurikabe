@@ -155,14 +155,17 @@ final class NurikabeGame {
         }
         let context = self.context
         let board = known       // a let: the detached closure may not capture a var
+        // The sink is taken now, not looked up through self later: the cells
+        // are already claimed, so if the player leaves before the look-ahead
+        // returns (the game is freed), dropping the credit would lose it for good.
+        let sink = onCredit
         Task { [weak self] in
             let credits = await Task.detached(priority: .utility) {
                 MasteryRules.credits(for: fresh, before: board, context: context)
             }.value
-            guard let self else { return }
             for t in credits {
-                self.creditsThisGame[t, default: 0] += 1
-                self.onCredit?(t)
+                self?.creditsThisGame[t, default: 0] += 1
+                sink?(t)
             }
         }
     }

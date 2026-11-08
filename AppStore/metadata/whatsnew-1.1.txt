@@ -1,0 +1,5 @@
+A finished chart now ends with the tide: the sea rolls in from the edge of the board, cell by cell, and the islands rise out of it. A tap skips straight to your time. With Reduce Motion on, the board simply settles.
+
+Nurikabe with VoiceOver. Every square is read by row and column, any square can be set to sea, dot or blank directly, and the result of each move is spoken, including an island closing or a rule breaking. Hints and the finish are read aloud too. Text grows with your size setting, colours meet contrast targets, and every button is at least a fingertip wide.
+
+Fixed: solving today's chart a second time keeps your first time and no longer counts as a new solve. Practice boards no longer set records for a size and grade. Home now turns the page at midnight. The daily follows the same calendar on every phone, whatever calendar yours is set to. The soft tap when an island closes works for every move again, and a technique you showed you knew still counts if you leave the board right away.

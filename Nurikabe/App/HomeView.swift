@@ -19,7 +19,10 @@ struct HomeView: View {
         var id: String { "\(size.rawValue)-\(tier.rawValue)" }
     }
 
-    private var today: DayKey { .today() }
+    @Environment(\.scenePhase) private var scenePhase
+    /// State, not computed in `body`: nothing re-renders Home at midnight, so
+    /// a Home left open overnight kept offering yesterday's chart.
+    @State private var today = DayKey.today()
     private var pathDone: Bool { progress.nextPathStep == nil }
 
     var body: some View {
@@ -73,7 +76,16 @@ struct HomeView: View {
         } message: { _ in
             Text("Your unfinished board will be lost.")
         }
-        .onAppear { cache.prefetch(size: .seven, tier: .steady) }
+        .onAppear {
+            today = .today()
+            cache.prefetch(size: .seven, tier: .steady)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
+            today = .today()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { today = .today() }
+        }
     }
 
     // MARK: Header
@@ -349,7 +361,11 @@ struct NewBoardSheet: View {
                 Section {
                     Picker("Size", selection: $size) {
                         ForEach(BoardSize.allCases) { s in
-                            Text(TechniqueContent.name(s) + (FeatureGate.isBoardSizeAvailable(s, unlocked: entitlements.isUnlocked) ? "" : " 🔒"))
+                            let open = FeatureGate.isBoardSizeAvailable(s, unlocked: entitlements.isUnlocked)
+                            // The glyph is for the eye; VoiceOver read it as
+                            // "lock" after the size, so the segment says "locked".
+                            Text(TechniqueContent.name(s) + (open ? "" : " 🔒"))
+                                .accessibilityLabel(open ? TechniqueContent.name(s) : "\(TechniqueContent.name(s)), locked")
                                 .tag(s)
                         }
                     }
@@ -369,6 +385,9 @@ struct NewBoardSheet: View {
                                 if tier == t { Image(systemName: "checkmark").foregroundStyle(Theme.accent) }
                             }
                         }
+                        // The checkmark is drawn, not spoken: say which is chosen.
+                        .accessibilityAddTraits(tier == t ? .isSelected : [])
+                        .accessibilityIdentifier("tier-\(t.rawValue)")
                     }
                 } header: {
                     Text("Difficulty").listHeaderText()

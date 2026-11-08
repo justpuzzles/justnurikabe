@@ -61,6 +61,20 @@ struct MasteryGameTests {
         #expect(g.creditsThisGame[.oneClue] == 1)
     }
 
+    /// 1.1: leaving the board while the look-ahead runs frees the game, but
+    /// the cells were already claimed, so the credit must still land.
+    @Test func creditStillLandsWhenTheGameIsGoneFirst() async {
+        var credited: [Technique] = []
+        do {
+            let (g, pos) = game()
+            g.onCredit = { credited.append($0) }
+            let target = pos.targets[0]
+            g.set(target, to: pos.puzzle.solution[target] ? .land : .sea)
+        }   // the only reference to the game ends here
+        for _ in 0..<100 where credited.isEmpty { try? await Task.sleep(for: .milliseconds(20)) }
+        #expect(credited == [.oneClue])
+    }
+
     @Test func hintCellsNeverEarnCredit() async {
         let (g, _) = game()
         var credited: [Technique] = []

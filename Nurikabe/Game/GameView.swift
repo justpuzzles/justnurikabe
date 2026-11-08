@@ -20,6 +20,9 @@ struct GameView: View {
     /// The cell a stroke began on, for speaking what a VoiceOver double-tap
     /// did (it arrives as a one-cell stroke).
     @State private var strokeCell: Int?
+    /// Closed islands and rule breaks when the stroke began, so its end can
+    /// tell what the stroke changed (haptic, spoken result).
+    @State private var strokeBefore: (Set<Int>, [Rules.Violation])?
     /// The win moment, started by the solving move. Nil on a board that was
     /// already solved when it opened: that one draws the settled look.
     @State private var flood: SeaFlood?
@@ -119,13 +122,17 @@ struct GameView: View {
             switch event {
             case .begin(let i):
                 strokeCell = i
+                strokeBefore = (game.satisfiedClues, game.ruleBreaks)
                 game.beginStroke(at: i)
                 Haptics.mark()
             case .extend(let i):
                 strokeCell = nil
                 game.extendStroke(to: i)
             case .end:
-                let before = (game.satisfiedClues, game.ruleBreaks)
+                // The board before the stroke began. Read here, it already
+                // held the stroke's marks, so no island ever "newly" closed.
+                let before = strokeBefore ?? (game.satisfiedClues, game.ruleBreaks)
+                strokeBefore = nil
                 game.endStroke()
                 save()
                 moveHaptic(satisfiedBefore: before.0, breaksBefore: before.1)

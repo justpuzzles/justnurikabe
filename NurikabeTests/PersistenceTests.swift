@@ -64,6 +64,42 @@ struct PersistenceTests {
         #expect(e.bestSeconds == 60)
     }
 
+    /// 1.1: today's chart solved again is not another solve. It keeps the
+    /// first time, even if the replay was faster, and adds nothing to stats.
+    @Test func aReplayedDailyKeepsItsFirstTimeAndIsNotCounted() {
+        let s = store()
+        let day = DayKey(year: 2026, month: 11, day: 8)
+        let first = s.recordSolve(kind: .daily(day), grade: .steady, size: .seven, seconds: 200, hintsUsed: 0)
+        #expect(first.isFirst)
+        let replay = s.recordSolve(kind: .daily(day), grade: .steady, size: .seven, seconds: 50, hintsUsed: 0)
+        #expect(replay == .init(isFirst: false, isNewBest: false))
+        let e = store().entry(size: .seven, grade: .steady)
+        #expect(e.solved == 1)
+        #expect(e.bestSeconds == 200)
+        #expect(store().dailies[day.description] == 200)
+        #expect(store().savedDaily == nil, "the replay's slot still clears")
+    }
+
+    /// 1.1: a practice board is generated for one technique at whatever grade
+    /// it lands on; it never sets a size-and-grade record.
+    @Test func practiceBoardsStayOutOfTheRecords() {
+        let s = store()
+        let p = BakedPuzzles.puzzle(size: .five)
+        s.saveGame(SavedGame(kind: .practice(.noPool), puzzle: p, grade: .gentle, marks: p.initialMarks,
+                             elapsed: 1, hintsUsed: 0))
+        let record = s.recordSolve(kind: .practice(.noPool), grade: .gentle, size: .five, seconds: 30, hintsUsed: 0)
+        #expect(record == .init(isFirst: false, isNewBest: false))
+        #expect(store().entry(size: .five, grade: .gentle).solved == 0)
+        #expect(store().totalSolved == 0)
+        #expect(store().savedPractice == nil)
+    }
+
+    @Test func dailyTitleDateIsShortAndNotISO() {
+        let text = PlayHostView.shortDate(DayKey(year: 2026, month: 11, day: 8))
+        #expect(!text.contains("2026-11-08"))
+        #expect(text.contains("8"))
+    }
+
     @Test func dailyStreakCountsBackFromToday() {
         let s = store()
         let today = DayKey(year: 2026, month: 10, day: 2)

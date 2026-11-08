@@ -97,10 +97,20 @@ struct PlayHostView: View {
         game = g
     }
 
+    /// "Nov 8" in the player's locale (the key itself is a Gregorian day; the
+    /// raw "2026-11-08" read like a log line in the title).
+    static func shortDate(_ day: DayKey) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let parts = DateComponents(year: day.year, month: day.month, day: day.day, hour: 12)
+        guard let date = calendar.date(from: parts) else { return day.description }
+        return date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
     private func title(for game: NurikabeGame) -> String {
         switch game.kind {
         case .random(let size, _): TechniqueContent.name(size)
-        case .daily(let day): "Daily · \(day.description)"
+        case .daily(let day): "Daily · \(Self.shortDate(day))"
         case .practice(let t): "Practice · \(TechniqueContent.name(t))"
         }
     }

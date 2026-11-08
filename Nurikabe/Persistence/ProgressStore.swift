@@ -114,9 +114,24 @@ final class ProgressStore {
     }
 
     /// Record a finished board and clear the save.
+    ///
+    /// Only fresh boards feed the records. A daily solved again keeps its
+    /// first time and is not another solve (the streak and best times would
+    /// otherwise be farmable), and a practice board, generated to show one
+    /// technique at whatever grade it lands, never sets a size-and-grade best.
     @discardableResult
     func recordSolve(kind: GameKind, grade: Difficulty, size: BoardSize,
                      seconds: TimeInterval, hintsUsed: Int) -> SolveRecord {
+        let counts: Bool
+        switch kind {
+        case .random: counts = true
+        case .daily(let day): counts = !isDailySolved(day)
+        case .practice: counts = false
+        }
+        guard counts else {
+            clearGame(kind: kind)
+            return SolveRecord(isFirst: false, isNewBest: false)
+        }
         let key = Self.statKey(size, grade)
         var entry = stats[key] ?? StatEntry()
         let previousBest = entry.bestSeconds
@@ -128,7 +143,7 @@ final class ProgressStore {
         stats[key] = entry
         save(stats, Key.stats)
         if case .daily(let day) = kind {
-            dailies[day.description] = min(dailies[day.description] ?? .infinity, seconds)
+            dailies[day.description] = seconds
             save(dailies, Key.dailies)
         }
         clearGame(kind: kind)
