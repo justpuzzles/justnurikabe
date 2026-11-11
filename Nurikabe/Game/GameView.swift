@@ -324,6 +324,14 @@ struct GameView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.ochreText)
             }
+            if case .daily(let day) = game.kind {
+                ShareLink(item: shareText(day)) {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+                .font(.subheadline.weight(.semibold))
+                .tint(Theme.accent)
+                .accessibilityLabel("Share result")
+            }
             if !techniquesUsed.isEmpty {
                 VStack(spacing: 8) {
                     Text("This board used").font(.caption).foregroundStyle(Theme.textSoft)
@@ -348,6 +356,18 @@ struct GameView: View {
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 14))
         .padding(.horizontal, 16)
         .accessibilityIdentifier("solvedCard")
+    }
+
+    /// PuzzleKit's family text: the day, the time on record (a replay
+    /// shares the first solve's), the streak, the link. Nothing about the
+    /// board itself, so it spoils nothing.
+    private func shareText(_ day: DayKey) -> String {
+        let time = progress.daily.time(for: day) ?? game.elapsed(at: Date())
+        let streak = progress.daily.lastCompleted == day ? progress.daily.currentStreak : 0
+        return DailyShare(game: "Just Nurikabe", day: day, timeText: Self.clock(time),
+                          streak: streak, detail: "\(TechniqueContent.name(game.size)) \(TechniqueContent.name(game.grade))",
+                          url: URL(string: "https://kaikunze.de/justnurikabe/"))
+            .text()
     }
 
     private var recordLine: String? {

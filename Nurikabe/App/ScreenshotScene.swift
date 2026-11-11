@@ -46,10 +46,12 @@ enum ScreenshotScene: String, CaseIterable {
         }
         let counts: [Technique: Int] = [.oneClue: 5, .twoClues: 5, .completeIsland: 5, .noPool: 3, .unreachable: 2]
         for (t, n) in counts { for _ in 0..<n { progress.credit(t) } }
-        var day = DayKey.today().previous
-        for _ in 0..<4 {
-            progress.recordSolve(kind: .daily(day), grade: .steady, size: .seven, seconds: 260, hintsUsed: 0)
-            day = day.previous
+        // Oldest first: an older day solved after a newer one is a late
+        // solve, which keeps its time but not the streak (PuzzleKit).
+        let yesterday = DayKey(date: .now).previous()
+        for back in (0..<4).reversed() {
+            progress.recordSolve(kind: .daily(yesterday.adding(days: -back)), grade: .steady,
+                                 size: .seven, seconds: 260, hintsUsed: 0)
         }
         guard self == .hint || self == .win || self == .home else { return }
         // The baked 7×7: instant even in an unoptimized Debug build, where

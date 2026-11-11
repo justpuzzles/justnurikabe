@@ -1,6 +1,22 @@
 import Foundation
 import Observation
 
+/// The save slots, one per kind of board, so none overwrites another.
+/// PuzzleKit's `SaveSlots` holds them since 1.2, under the 1.1 keys.
+nonisolated enum GameSlot: Hashable, Sendable, CaseIterable {
+    case random
+    case daily
+    case practice
+
+    init(_ kind: GameKind) {
+        switch kind {
+        case .random: self = .random
+        case .daily: self = .daily
+        case .practice: self = .practice
+        }
+    }
+}
+
 /// What kind of board a game is, for saving, stats and the finish screen.
 nonisolated enum GameKind: Codable, Hashable, Sendable {
     case random(size: BoardSize, tier: Difficulty)
@@ -50,59 +66,63 @@ final class ProgressStore {
         static let rules = "nurikabe.rulesDone.v1"
         static let lessons = "nurikabe.lessonsDone.v1"
         static let stats = "nurikabe.stats.v1"
+        /// Day → solve time, 1.1's whole daily history. Still written, so a
+        /// downgrade keeps it; 1.2 reads it only to build `daily` once.
         static let dailies = "nurikabe.dailies.v1"
+        /// PuzzleKit's `DailyRecord` (times, streak, best streak), from 1.2.
+        static let daily = "nurikabe.daily.v1"
         static let mastery = "nurikabe.mastery.v1"
     }
 
     private let defaults: UserDefaults
 
     var settings: Settings { didSet { save(settings, Key.settings) } }
+    /// One slot per kind of board; observable, so Continue appears the
+    /// moment a game is saved.
+    private let saves: SaveSlots<GameSlot, SavedGame>
     /// The main game in progress (random boards) — what Continue resumes.
-    private(set) var savedGame: SavedGame?
+    var savedGame: SavedGame? { saves[.random] }
     /// A daily in progress. Its own slot, so opening the daily never throws
     /// away the main game (and vice versa).
-    private(set) var savedDaily: SavedGame?
+    var savedDaily: SavedGame? { saves[.daily] }
     /// A practice board in progress, likewise separate.
-    private(set) var savedPractice: SavedGame?
+    var savedPractice: SavedGame? { saves[.practice] }
     private(set) var completedRules: Set<RuleStep>
     private(set) var completedLessons: Set<Technique>
     private(set) var stats: [String: StatEntry]
-    /// Day → solve time.
-    private(set) var dailies: [String: TimeInterval]
+    /// The daily record: per-day times and the streak (PuzzleKit).
+    private(set) var daily: DailyRecord
+    /// Day → solve time, as 1.1 kept it.
+    var dailies: [String: TimeInterval] { daily.completedTimes }
     /// Technique → credited unaided deductions (see MasteryRules).
     private(set) var mastery: [Technique: Int]
 
     init(userDefaults: UserDefaults = .standard) {
         defaults = userDefaults
         settings = Self.load(Settings.self, Key.settings, userDefaults) ?? Settings()
-        savedGame = Self.load(SavedGame.self, Key.savedGame, userDefaults)
-        savedDaily = Self.load(SavedGame.self, Key.savedDaily, userDefaults)
-        savedPractice = Self.load(SavedGame.self, Key.savedPractice, userDefaults)
+        saves = SaveSlots(defaults: userDefaults, keys: [.random: Key.savedGame,
+                                                         .daily: Key.savedDaily,
+                                                         .practice: Key.savedPractice])
         completedRules = Self.load(Set<RuleStep>.self, Key.rules, userDefaults) ?? []
         completedLessons = Self.load(Set<Technique>.self, Key.lessons, userDefaults) ?? []
         stats = Self.load([String: StatEntry].self, Key.stats, userDefaults) ?? [:]
-        dailies = Self.load([String: TimeInterval].self, Key.dailies, userDefaults) ?? [:]
+        daily = Self.load(DailyRecord.self, Key.daily, userDefaults)
+            ?? Self.rebuild(from: Self.load([String: TimeInterval].self, Key.dailies, userDefaults) ?? [:])
         mastery = Self.load([Technique: Int].self, Key.mastery, userDefaults) ?? [:]
     }
 
     // MARK: Games
 
-    /// Save a game into the slot its kind belongs to.
+    /// Save a game into the slot its kind belongs to. A new board is saved
+    /// as soon as it is drawn: Home asks before one replaces a game in
+    /// progress, so this never needs PuzzleKit's `hasProgress` guard.
     func saveGame(_ game: SavedGame) {
-        switch game.kind {
-        case .random: savedGame = game; save(game, Key.savedGame)
-        case .daily: savedDaily = game; save(game, Key.savedDaily)
-        case .practice: savedPractice = game; save(game, Key.savedPractice)
-        }
+        saves.save(game, in: GameSlot(game.kind), hasProgress: true)
     }
 
     /// Clear the slot a kind of game uses.
     func clearGame(kind: GameKind) {
-        switch kind {
-        case .random: savedGame = nil; defaults.removeObject(forKey: Key.savedGame)
-        case .daily: savedDaily = nil; defaults.removeObject(forKey: Key.savedDaily)
-        case .practice: savedPractice = nil; defaults.removeObject(forKey: Key.savedPractice)
-        }
+        saves.clear(GameSlot(kind))
     }
 
     /// What a finished board meant for the records.
@@ -125,7 +145,11 @@ final class ProgressStore {
         let counts: Bool
         switch kind {
         case .random: counts = true
-        case .daily(let day): counts = !isDailySolved(day)
+        case .daily(let day):
+            // PuzzleKit's record decides: a replay records nothing at all.
+            let outcome = daily.record(day: day, time: seconds)
+            counts = !outcome.isReplay
+            if counts { saveDaily() }
         case .practice: counts = false
         }
         guard counts else {
@@ -142,10 +166,6 @@ final class ProgressStore {
         if previousBest.map({ seconds < $0 }) ?? true { entry.bestSeconds = seconds }
         stats[key] = entry
         save(stats, Key.stats)
-        if case .daily(let day) = kind {
-            dailies[day.description] = seconds
-            save(dailies, Key.dailies)
-        }
         clearGame(kind: kind)
         return record
     }
@@ -175,18 +195,31 @@ final class ProgressStore {
 
     // MARK: Dailies
 
-    func isDailySolved(_ day: DayKey) -> Bool { dailies[day.description] != nil }
+    func isDailySolved(_ day: DayKey) -> Bool { daily.hasCompleted(day) }
 
-    /// Consecutive solved days ending today (or yesterday, so a streak is not
-    /// shown as broken before today's board is done).
-    func dailyStreak(today: DayKey = .today()) -> Int {
-        var day = isDailySolved(today) ? today : today.previous
-        var count = 0
-        while isDailySolved(day) {
-            count += 1
-            day = day.previous
+    /// The streak as of `today`: alive through yesterday, so it is not shown
+    /// as broken before today's board is done.
+    func dailyStreak(today: DayKey) -> Int {
+        daily.displayStreak(today: today)
+    }
+
+    var bestDailyStreak: Int { daily.bestStreak }
+
+    private func saveDaily() {
+        save(daily, Key.daily)
+        save(daily.completedTimes, Key.dailies)
+    }
+
+    /// 1.1 kept only day → time and counted the streak back from today. The
+    /// record is rebuilt from that once, oldest day first, so the streak and
+    /// best streak come out as 1.1 would have shown them.
+    nonisolated static func rebuild(from times: [String: TimeInterval]) -> DailyRecord {
+        var record = DailyRecord()
+        for (iso, time) in times.sorted(by: { $0.key < $1.key }) {
+            guard let day = DayKey(isoString: iso) else { continue }
+            record.record(day: day, time: time)
         }
-        return count
+        return record
     }
 
     // MARK: Learning path

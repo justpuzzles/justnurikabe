@@ -19,10 +19,10 @@ struct HomeView: View {
         var id: String { "\(size.rawValue)-\(tier.rawValue)" }
     }
 
-    @Environment(\.scenePhase) private var scenePhase
-    /// State, not computed in `body`: nothing re-renders Home at midnight, so
-    /// a Home left open overnight kept offering yesterday's chart.
-    @State private var today = DayKey.today()
+    @Environment(TodayClock.self) private var clock
+    /// From the app's `TodayClock`, which follows midnight, time-zone changes
+    /// and the app coming back to the front (1.1 kept its own copy here).
+    private var today: DayKey { clock.today }
     private var pathDone: Bool { progress.nextPathStep == nil }
 
     var body: some View {
@@ -77,14 +77,7 @@ struct HomeView: View {
             Text("Your unfinished board will be lost.")
         }
         .onAppear {
-            today = .today()
             cache.prefetch(size: .seven, tier: .steady)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in
-            today = .today()
-        }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { today = .today() }
         }
     }
 
@@ -315,6 +308,7 @@ private func previewEnvironment(_ configure: (ProgressStore) -> Void) -> some Vi
         .environment(EntitlementStore(userDefaults: defaults, source: PreviewEntitlementSource(owned: false)))
         .environment(PaywallPresenter())
         .environment(PuzzleCache())
+        .environment(TodayClock())
 }
 
 #Preview("New player") { previewEnvironment { _ in } }
@@ -333,10 +327,10 @@ private func previewEnvironment(_ configure: (ProgressStore) -> Void) -> some Vi
     previewEnvironment { p in
         for r in RuleStep.allCases { p.completeRule(r) }
         for t in Technique.allCases { p.completeLesson(t) }
-        var day = DayKey.today()
-        for _ in 0..<4 {
-            p.recordSolve(kind: .daily(day), grade: .steady, size: .seven, seconds: 200, hintsUsed: 0)
-            day = day.previous
+        let today = DayKey(date: .now)
+        for back in (0..<4).reversed() {
+            p.recordSolve(kind: .daily(today.adding(days: -back)), grade: .steady, size: .seven,
+                          seconds: 200, hintsUsed: 0)
         }
     }
 }

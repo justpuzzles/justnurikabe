@@ -103,13 +103,47 @@ struct PersistenceTests {
     @Test func dailyStreakCountsBackFromToday() {
         let s = store()
         let today = DayKey(year: 2026, month: 10, day: 2)
-        for day in [today, today.previous, today.previous.previous] {
+        // Oldest first, the order days are played in.
+        for day in [today.adding(days: -2), today.previous(), today] {
             s.recordSolve(kind: .daily(day), grade: .steady, size: .seven, seconds: 100, hintsUsed: 0)
         }
         #expect(s.dailyStreak(today: today) == 3)
         // Before today's board is done, yesterday's streak still shows.
         #expect(s.dailyStreak(today: DayKey(year: 2026, month: 10, day: 3)) == 3)
         #expect(s.dailyStreak(today: DayKey(year: 2026, month: 10, day: 5)) == 0)
+    }
+
+    /// 1.1 kept only day → time and counted back from today. The first 1.2
+    /// launch builds PuzzleKit's record from it: the same streak 1.1 showed,
+    /// plus a best streak, and the 1.1 key keeps being written for a
+    /// downgrade.
+    @Test func a1_1HistoryBuildsTheRecord() throws {
+        let times: [String: TimeInterval] = ["2026-10-01": 100, "2026-10-02": 90, "2026-10-03": 80,
+                                             "2026-10-06": 70, "2026-10-07": 60]
+        defaults.set(try JSONEncoder().encode(times), forKey: "nurikabe.dailies.v1")
+        let s = store()
+        #expect(s.dailyStreak(today: DayKey(year: 2026, month: 10, day: 8)) == 2)
+        #expect(s.bestDailyStreak == 3)
+        #expect(s.dailies == times)
+
+        s.recordSolve(kind: .daily(DayKey(year: 2026, month: 10, day: 8)), grade: .steady, size: .seven,
+                      seconds: 55, hintsUsed: 0)
+        #expect(store().dailyStreak(today: DayKey(year: 2026, month: 10, day: 8)) == 3)
+        let written = try JSONDecoder().decode([String: TimeInterval].self,
+                                               from: defaults.data(forKey: "nurikabe.dailies.v1")!)
+        #expect(written["2026-10-08"] == 55)
+        #expect(written.count == 6)
+    }
+
+    /// The save slots are PuzzleKit's since 1.2, under 1.1's three keys: a
+    /// game saved by 1.1 is still there.
+    @Test func a1_1SaveIsStillThere() throws {
+        let p = BakedPuzzles.puzzle(size: .five)
+        let saved = SavedGame(kind: .random(size: .five, tier: .gentle), puzzle: p, grade: .gentle,
+                              marks: p.initialMarks, elapsed: 12, hintsUsed: 1)
+        defaults.set(try JSONEncoder().encode(saved), forKey: "nurikabe.savedGame.v1")
+        #expect(store().savedGame == saved)
+        #expect(store().savedDaily == nil)
     }
 
     @Test func pathUnlocksInOrder() {

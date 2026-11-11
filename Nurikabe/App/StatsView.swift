@@ -2,12 +2,13 @@ import SwiftUI
 
 struct StatsView: View {
     @Environment(ProgressStore.self) private var progress
+    @Environment(TodayClock.self) private var clock
 
     var body: some View {
         List {
             Section {
                 row("Boards solved", "\(progress.totalSolved)")
-                row("Daily streak", "\(progress.dailyStreak())")
+                row("Daily streak", "\(progress.dailyStreak(today: clock.today))")
                 row("Lessons finished", "\(progress.completedLessons.count) of \(Technique.allCases.count)")
             }
             Section {

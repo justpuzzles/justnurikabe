@@ -11,6 +11,9 @@ struct NurikabeApp: App {
     @State private var entitlements: EntitlementStore
     @State private var paywall: PaywallPresenter
     @State private var cache: PuzzleCache
+    /// Today's day key for every screen, kept current across midnight.
+    @State private var clock = TodayClock()
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         #if DEBUG
@@ -32,10 +35,11 @@ struct NurikabeApp: App {
             let puzzle = BakedPuzzles.puzzle(size: .seven)
             progress.saveGame(SavedGame(kind: .random(size: .seven, tier: .sharp), puzzle: puzzle,
                                         grade: .sharp, marks: puzzle.initialMarks, elapsed: 312, hintsUsed: 1))
-            var day = DayKey.today().previous
-            for _ in 0..<3 {
-                progress.recordSolve(kind: .daily(day), grade: .steady, size: .seven, seconds: 240, hintsUsed: 0)
-                day = day.previous
+            // Oldest first (see ScreenshotScene).
+            let yesterday = DayKey(date: .now).previous()
+            for back in (0..<3).reversed() {
+                progress.recordSolve(kind: .daily(yesterday.adding(days: -back)), grade: .steady,
+                                     size: .seven, seconds: 240, hintsUsed: 0)
             }
         }
         #endif
@@ -74,7 +78,13 @@ struct NurikabeApp: App {
                 .environment(entitlements)
                 .environment(paywall)
                 .environment(cache)
+                .environment(clock)
                 .tint(Theme.accent)
+        }
+        // No day-change notification reaches a suspended app, so a phone
+        // unlocked the next morning would still be on yesterday.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { clock.refresh() }
         }
     }
 }

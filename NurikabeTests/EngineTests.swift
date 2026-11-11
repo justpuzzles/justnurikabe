@@ -127,7 +127,37 @@ struct DailySeedTests {
     @Test func sameDaySameBoard() {
         let day = DayKey(year: 2026, month: 9, day: 27)
         #expect(DailySeed.seed(for: day) == DailySeed.seed(for: day))
-        #expect(DailySeed.seed(for: day) != DailySeed.seed(for: day.previous))
+        #expect(DailySeed.seed(for: day) != DailySeed.seed(for: day.previous()))
+    }
+
+    /// The seed moved into PuzzleKit in 1.2. Pinned to the value 1.1's own
+    /// FNV-1a produced, and to 1.1's code over a century of days: if either
+    /// fails, every player's daily changed.
+    @Test func seedMatchesTheShippedHash() {
+        #expect(DailySeed.seed(for: DayKey(year: 2026, month: 1, day: 1)) == 0x6dd30d514b63d0b5)
+        var day = DayKey(year: 2026, month: 9, day: 27)
+        for _ in 0..<36_525 {
+            var hash: UInt64 = 0xcbf2_9ce4_8422_2325
+            for byte in "nurikabe-daily-\(String(format: "%04d-%02d-%02d", day.year, day.month, day.day))".utf8 {
+                hash ^= UInt64(byte)
+                hash = hash &* 0x0000_0100_0000_01b3
+            }
+            #expect(DailySeed.seed(for: day) == hash)
+            day = day.next()
+        }
+    }
+
+    /// 1.1 took the weekday from a UTC Gregorian calendar; PuzzleKit computes
+    /// it from the date. Same answer for every day, so the same tiers.
+    @Test func weekdayMatchesTheShippedCalendarWeekday() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        var day = DayKey(year: 2026, month: 1, day: 1)
+        for _ in 0..<3_660 {
+            let date = calendar.date(from: DateComponents(year: day.year, month: day.month, day: day.day))!
+            #expect(day.weekday == calendar.component(.weekday, from: date))
+            day = day.next()
+        }
     }
 
     @Test func weekClimbsFromGentleToSevere() {
@@ -138,8 +168,8 @@ struct DailySeedTests {
     }
 
     @Test func previousCrossesMonthAndYear() {
-        #expect(DayKey(year: 2026, month: 10, day: 1).previous == DayKey(year: 2026, month: 9, day: 30))
-        #expect(DayKey(year: 2027, month: 1, day: 1).previous == DayKey(year: 2026, month: 12, day: 31))
+        #expect(DayKey(year: 2026, month: 10, day: 1).previous() == DayKey(year: 2026, month: 9, day: 30))
+        #expect(DayKey(year: 2027, month: 1, day: 1).previous() == DayKey(year: 2026, month: 12, day: 31))
     }
 }
 
@@ -149,16 +179,18 @@ struct DayKeyCalendarTests {
     /// a Japanese-calendar year (Reiwa 8) would otherwise seed a different board.
     @Test func defaultCalendarIsGregorianLocalTime() {
         #expect(DayKey.localCalendar.identifier == .gregorian)
-        #expect(DayKey.localCalendar.timeZone == TimeZone.current)
+        // PuzzleKit reads the auto-updating zone (it follows a time-zone
+        // change with the app open), which is not `==` to `.current`.
+        #expect(DayKey.localCalendar.timeZone.identifier == TimeZone.current.identifier)
         let date = Date(timeIntervalSince1970: 1_790_000_000)
         let parts = DayKey.localCalendar.dateComponents([.year, .month, .day], from: date)
-        #expect(DayKey(date) == DayKey(year: parts.year!, month: parts.month!, day: parts.day!))
+        #expect(DayKey(date: date) == DayKey(year: parts.year!, month: parts.month!, day: parts.day!))
     }
 
     @Test func otherCalendarsGiveOtherYears() {
         var japanese = Calendar(identifier: .japanese)
         japanese.timeZone = .current
         let date = Date(timeIntervalSince1970: 1_790_000_000)
-        #expect(DayKey(date, calendar: japanese) != DayKey(date))
+        #expect(DayKey(date: date, calendar: japanese) != DayKey(date: date))
     }
 }

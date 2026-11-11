@@ -14,7 +14,17 @@ positioning against the siblings in `docs/DESIGN.md`). Engineering notes:
   file under `Nurikabe/` and `NurikabeTests/` joins its target automatically.
 - **`Nurikabe/Engine/` is pure**: Foundation only, every type `nonisolated` +
   `Sendable`. It must compile as a CLI:
-  `swiftc -O -o /tmp/nurikabe-enginecheck Nurikabe/Engine/*.swift Tools/EngineCheck/*.swift`.
+  `swiftc -O -o /tmp/nurikabe-enginecheck Nurikabe/Engine/*.swift ../PuzzleKit/Sources/PuzzleKit/*.swift Tools/EngineCheck/*.swift`.
+- **PuzzleKit (since 1.2)** is a local package at `../PuzzleKit`
+  (github.com/justpuzzles/PuzzleKit); clone it beside this repo. It owns
+  `DayKey`/`DaySeed`, the three save slots (`SaveSlots`, under 1.1's
+  `savedGame`/`savedDaily`/`savedPractice` keys), the streak record
+  (`DailyRecord` under `nurikabe.daily.v1`, built once from 1.1's
+  `nurikabe.dailies.v1`, which is still written for a downgrade), `TodayClock`
+  and the daily share text. `App/PuzzleKitExports.swift` re-exports it; engine
+  files import it behind `#if canImport(PuzzleKit)`. Never change the seed
+  prefix (`nurikabe-daily-`), the hash or `isoString`. Record dailies oldest
+  first when seeding test data: an older day after a newer one is a late solve.
 - **`Theme` and `Motion` are `nonisolated` — load-bearing.** Project default
   isolation is MainActor; a dynamic-colour provider inheriting it traps when
   UIKit resolves off-main. Guarded by `ThemeIsolationTests`.
@@ -48,7 +58,7 @@ positioning against the siblings in `docs/DESIGN.md`). Engineering notes:
 
 ```bash
 # Engine, no simulator (seconds; NURIKABE_CORPUS=n boards per size×tier):
-swiftc -O -o /tmp/nurikabe-enginecheck Nurikabe/Engine/*.swift Tools/EngineCheck/*.swift && /tmp/nurikabe-enginecheck
+swiftc -O -o /tmp/nurikabe-enginecheck Nurikabe/Engine/*.swift ../PuzzleKit/Sources/PuzzleKit/*.swift Tools/EngineCheck/*.swift && /tmp/nurikabe-enginecheck
 NURIKABE_CALIBRATE=1 /tmp/nurikabe-enginecheck   # score percentiles per technique floor
 NURIKABE_BAKE=1 /tmp/nurikabe-enginecheck        # fresh BakedPuzzles literals
 NURIKABE_LESSONS=1 /tmp/nurikabe-enginecheck > Nurikabe/Engine/LessonBoards.swift
