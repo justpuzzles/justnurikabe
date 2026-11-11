@@ -111,11 +111,13 @@ These become claimable once this branch ships:
   for the eye), and the chosen difficulty row carries `.isSelected`.
   `testNewBoardSheetSpeaksLockAndSelection` checks both on a locked launch
   (any screenshot scene or `-NurikabeScreenshotUnlock` unlocks the app).
-- Its audit reports, all with no element attached, are accepted in that test
-  only: Dynamic Type / clipped text from the system Form and the bar's
-  Cancel/Start (the AX5 screenshot from `testNewBoardSheetAtLargestTextSize`
-  shows every row and header scaling with nothing cut), and one contrast report
-  whose element screenshot is the SIZE header, measured at 7.1:1.
+- Its audit reports are accepted in that test only: Dynamic Type / clipped
+  text from the system Form and the bar's Cancel/Start (the AX5 screenshot from
+  `testNewBoardSheetAtLargestTextSize` shows every row and header scaling with
+  nothing cut), and one contrast report on the SIZE header, measured at 7.1:1
+  (7.2:1 from the colours). The audit attaches that header to the report in
+  some runs and leaves it unattached in others, which made the test flaky
+  until 2026-11-11; both forms are accepted, for that label only.
 - Touch strokes now compare against the board as it was when the stroke
   began, so the island-closed haptic and the spoken move result (VoiceOver
   double-taps arrive as one-cell strokes) report what the stroke changed.

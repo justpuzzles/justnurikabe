@@ -9,6 +9,8 @@ final class AccessibilityAuditTests: XCTestCase {
     private var acceptListFalsePositives = false
     private var acceptUnattributedBoardDigits = false
     private var acceptUnattributedContrast = false
+    /// Labels whose contrast reports were measured and are false (see the test).
+    private var acceptContrastOn: Set<String> = []
 
     private func launch(scene: String? = nil, extra: [String] = []) -> XCUIApplication {
         continueAfterFailure = true
@@ -34,6 +36,8 @@ final class AccessibilityAuditTests: XCTestCase {
             if self.acceptUnattributedBoardDigits, issue.element == nil, issue.auditType == .dynamicType { return true }
             if self.acceptListFalsePositives, [.dynamicType, .textClipped].contains(issue.auditType) { return true }
             if self.acceptUnattributedContrast, issue.element == nil, issue.auditType == .contrast { return true }
+            if issue.auditType == .contrast, let label = issue.element?.label,
+               self.acceptContrastOn.contains(label) { return true }
             return false
         }
     }
@@ -119,10 +123,14 @@ final class AccessibilityAuditTests: XCTestCase {
         // at AX5 by the screenshot below; docs/ACCESSIBILITY.md). Contrast
         // and hit regions stay strict.
         acceptListFalsePositives = true
-        // The one contrast report has no element; its screenshot is the SIZE
-        // header (Theme.textSoft over the grouped background), measured from
-        // that screenshot at 7.1:1 on 2026-11-08. Only an unattributed report is let through.
+        // One contrast report, on the SIZE header (Theme.textSoft over the
+        // grouped background): measured from its screenshot at 7.1:1 on
+        // 2026-11-08, and 7.2:1 from the colours. The audit attaches the
+        // header to the report in some runs and not in others (2026-11-11:
+        // attached in a full-suite run, unattached in four solo runs), so
+        // both forms are accepted, and only for that header.
         acceptUnattributedContrast = true
+        acceptContrastOn = ["SIZE"]
         try audit(app)
     }
 
