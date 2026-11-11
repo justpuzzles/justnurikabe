@@ -14,9 +14,12 @@ positioning against the siblings in `docs/DESIGN.md`). Engineering notes:
   file under `Nurikabe/` and `NurikabeTests/` joins its target automatically.
 - **`Nurikabe/Engine/` is pure**: Foundation only, every type `nonisolated` +
   `Sendable`. It must compile as a CLI:
-  `swiftc -O -o /tmp/nurikabe-enginecheck Nurikabe/Engine/*.swift ../PuzzleKit/Sources/PuzzleKit/*.swift Tools/EngineCheck/*.swift`.
-- **PuzzleKit (since 1.2)** is a local package at `../PuzzleKit`
-  (github.com/justpuzzles/PuzzleKit); clone it beside this repo. It owns
+  `swiftc -O -o /tmp/nurikabe-enginecheck Nurikabe/Engine/*.swift "$(Tools/puzzlekit-sources.sh)"/*.swift Tools/EngineCheck/*.swift`.
+- **PuzzleKit (since 1.2)** is a Swift package from
+  github.com/justpuzzles/PuzzleKit, pinned to a revision in the project
+  (`Package.resolved`); a plain clone builds. To work on the kit, drag a local
+  `../PuzzleKit` into the project (it overrides the remote one) or set
+  `PUZZLEKIT=../PuzzleKit` for the engine build; bump the pin when the kit changes. It owns
   `DayKey`/`DaySeed`, the three save slots (`SaveSlots`, under 1.1's
   `savedGame`/`savedDaily`/`savedPractice` keys), the streak record
   (`DailyRecord` under `nurikabe.daily.v1`, built once from 1.1's
@@ -58,7 +61,7 @@ positioning against the siblings in `docs/DESIGN.md`). Engineering notes:
 
 ```bash
 # Engine, no simulator (seconds; NURIKABE_CORPUS=n boards per size×tier):
-swiftc -O -o /tmp/nurikabe-enginecheck Nurikabe/Engine/*.swift ../PuzzleKit/Sources/PuzzleKit/*.swift Tools/EngineCheck/*.swift && /tmp/nurikabe-enginecheck
+swiftc -O -o /tmp/nurikabe-enginecheck Nurikabe/Engine/*.swift "$(Tools/puzzlekit-sources.sh)"/*.swift Tools/EngineCheck/*.swift && /tmp/nurikabe-enginecheck
 NURIKABE_CALIBRATE=1 /tmp/nurikabe-enginecheck   # score percentiles per technique floor
 NURIKABE_BAKE=1 /tmp/nurikabe-enginecheck        # fresh BakedPuzzles literals
 NURIKABE_LESSONS=1 /tmp/nurikabe-enginecheck > Nurikabe/Engine/LessonBoards.swift

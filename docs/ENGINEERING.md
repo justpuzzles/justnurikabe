@@ -1,6 +1,6 @@
 # Engineering notes — Just Nurikabe
 
-Harness: `swiftc -O -o /tmp/nurikabe-enginecheck Nurikabe/Engine/*.swift ../PuzzleKit/Sources/PuzzleKit/*.swift Tools/EngineCheck/*.swift && /tmp/nurikabe-enginecheck`
+Harness: `swiftc -O -o /tmp/nurikabe-enginecheck Nurikabe/Engine/*.swift "$(Tools/puzzlekit-sources.sh)"/*.swift Tools/EngineCheck/*.swift && /tmp/nurikabe-enginecheck`
 (`NURIKABE_CORPUS=n`, `NURIKABE_CALIBRATE=1`, `NURIKABE_BAKE=1`, `NURIKABE_LESSONS=1`).
 
 ## What the harness proves on every run
