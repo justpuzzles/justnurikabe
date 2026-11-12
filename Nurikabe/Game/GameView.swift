@@ -305,15 +305,15 @@ struct GameView: View {
                     .font(.subheadline.weight(.semibold))
             case .nudge:
                 Text(TechniqueContent.nudge)
-                ladderFooter("Tap Hint again to name the argument.")
+                ladderFooter("\(InputVerb.press) Hint again to name the argument.")
             case .technique(let step):
                 Text(TechniqueContent.name(step.technique)).font(.headline)
                 Text(TechniqueContent.rule(step.technique))
-                ladderFooter("Tap Hint again to see it on the board.")
+                ladderFooter("\(InputVerb.press) Hint again to see it on the board.")
             case .argument(let step):
                 Text(TechniqueContent.name(step.technique)).font(.headline)
                 Text(TechniqueContent.argument(step, puzzle: game.puzzle))
-                ladderFooter("Tap Hint again to fill it in.")
+                ladderFooter("\(InputVerb.press) Hint again to fill it in.")
             case .apply, .stuck:
                 Text(TechniqueContent.stuck)
             }
@@ -354,7 +354,7 @@ struct GameView: View {
         VStack(spacing: 12) {
             Text("Solved").font(Theme.heading).foregroundStyle(Theme.text)
             Text("\(Self.clock(game.elapsed(at: Date()))) · \(game.hintsUsed == 0 ? "no hints" : "\(game.hintsUsed) hint\(game.hintsUsed == 1 ? "" : "s")")")
-                .numberFont(16)
+                .numberFont(Metrics.isTelevision ? 26 : 16)
                 .foregroundStyle(Theme.textSoft)
             if let line = recordLine {
                 Label(line, systemImage: "rosette")

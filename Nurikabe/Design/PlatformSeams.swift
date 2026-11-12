@@ -146,6 +146,18 @@ nonisolated enum Metrics {
     #endif
 }
 
+/// The verb for pressing a control, in the hint card's instructions: there
+/// is nothing to tap on a television, and on a Mac you click.
+nonisolated enum InputVerb {
+    #if os(tvOS)
+    static let press = "Press"
+    #elseif os(macOS)
+    static let press = "Click"
+    #else
+    static let press = "Tap"
+    #endif
+}
+
 /// Whether VoiceOver is speaking, on every platform (UIKit and AppKit ask
 /// differently).
 @MainActor
