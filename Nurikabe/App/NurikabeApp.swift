@@ -80,7 +80,19 @@ struct NurikabeApp: App {
                 .environment(cache)
                 .environment(clock)
                 .tint(Theme.accent)
+                #if os(macOS)
+                .frame(minWidth: 720, minHeight: 620)
+                #endif
         }
+        #if os(macOS)
+        // A window on a desk: wide enough for the board beside its hint and
+        // tools (the iPad landscape layout), and the menu bar plays.
+        .defaultSize(width: 1100, height: 820)
+        .commands { GameCommands() }
+        #elseif os(visionOS)
+        // Wide, so the board sits beside the talk instead of under it.
+        .defaultSize(width: 1180, height: 860)
+        #endif
         // No day-change notification reaches a suspended app, so a phone
         // unlocked the next morning would still be on yesterday.
         .onChange(of: scenePhase) { _, phase in

@@ -1,5 +1,5 @@
 import SwiftUI
-#if canImport(UIKit)
+#if os(iOS)
 import UIKit
 #endif
 
@@ -12,7 +12,7 @@ enum Haptics {
     /// Applied from settings at launch AND when the toggle changes.
     static var enabled = true
 
-    #if canImport(UIKit)
+    #if os(iOS)
     private static let light = UIImpactFeedbackGenerator(style: .light)
     private static let soft = UIImpactFeedbackGenerator(style: .soft)
     private static let notification = UINotificationFeedbackGenerator()
@@ -20,7 +20,7 @@ enum Haptics {
 
     /// A cell marked.
     static func mark() {
-        #if canImport(UIKit)
+        #if os(iOS)
         guard enabled else { return }
         light.impactOccurred(intensity: 0.5)
         #endif
@@ -28,7 +28,7 @@ enum Haptics {
 
     /// An island closed during play.
     static func islandClosed() {
-        #if canImport(UIKit)
+        #if os(iOS)
         guard enabled else { return }
         soft.impactOccurred()
         #endif
@@ -36,7 +36,7 @@ enum Haptics {
 
     /// A move the lesson did not want, or a broken rule.
     static func warn() {
-        #if canImport(UIKit)
+        #if os(iOS)
         guard enabled else { return }
         notification.notificationOccurred(.warning)
         #endif
@@ -44,7 +44,7 @@ enum Haptics {
 
     /// A board solved, a lesson finished.
     static func success() {
-        #if canImport(UIKit)
+        #if os(iOS)
         guard enabled else { return }
         notification.notificationOccurred(.success)
         #endif

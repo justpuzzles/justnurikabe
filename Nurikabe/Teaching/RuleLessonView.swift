@@ -66,7 +66,7 @@ struct RuleLessonView: View {
         }
         .background(Theme.ground.ignoresSafeArea())
         .navigationTitle("The rules")
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
     }
 
     @ViewBuilder

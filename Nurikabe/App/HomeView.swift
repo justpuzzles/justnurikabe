@@ -44,13 +44,23 @@ struct HomeView: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .background(Theme.ground.ignoresSafeArea())
+        #if os(iOS)
         // The bar is part of the band: the same fixed indigo (see Theme.band)
         // and the dark scheme, so the status bar is light over it.
         .toolbarBackground(Theme.band, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        #endif
+        // Not on Apple TV: a toolbar there is a focus trap (Just Kakuro), so
+        // Stats and Settings are rows on the page instead (`slimRows`).
+        #if !os(tvOS)
         .toolbar { bandToolbar }
+        #endif
+        // Paper icons on the band. Not on Vision Pro, where the toolbar is a
+        // glass ornament and paper tint turned its buttons into blank pills.
+        #if !os(visionOS)
         .tint(Theme.bandText)
+        #endif
         .sheet(isPresented: $showingNewBoard) {
             NewBoardSheet { size, tier in
                 showingNewBoard = false
@@ -88,17 +98,26 @@ struct HomeView: View {
     /// the family's no-translucency rule, so the shared background is hidden.
     @ToolbarContentBuilder
     private var bandToolbar: some ToolbarContent {
+        #if os(iOS)
         if #available(iOS 26.0, *) {
-            ToolbarItem(placement: .topBarTrailing) { statsButton }
+            ToolbarItem(placement: .barTrailing) { statsButton }
                 .sharedBackgroundVisibility(.hidden)
-            ToolbarItem(placement: .topBarTrailing) { settingsButton }
+            ToolbarItem(placement: .barTrailing) { settingsButton }
                 .sharedBackgroundVisibility(.hidden)
         } else {
-            ToolbarItemGroup(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .barTrailing) {
                 statsButton
                 settingsButton
             }
         }
+        #else
+        // The Mac's window toolbar and Vision Pro's ornament bar: no band to
+        // keep clean, so the system's own buttons.
+        ToolbarItemGroup(placement: .barTrailing) {
+            statsButton
+            settingsButton
+        }
+        #endif
     }
 
     private var statsButton: some View {
@@ -125,7 +144,7 @@ struct HomeView: View {
         .padding(.bottom, 36 + Self.cardOverlap)
         .background(alignment: .bottom) {
             // Tall enough to reach past the top of any overscroll.
-            SeaBand().frame(height: 1200).ignoresSafeArea(edges: .top)
+            SeaBand().frame(height: 1200).ignoresSafeArea(edges: [.top, .horizontal])
         }
     }
 
@@ -171,7 +190,7 @@ struct HomeView: View {
             .padding(20)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tile)
         .accessibilityIdentifier("learnCard")
     }
 
@@ -199,7 +218,7 @@ struct HomeView: View {
             .padding(20)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tile)
         .accessibilityIdentifier("continueCard")
     }
 
@@ -253,7 +272,7 @@ struct HomeView: View {
             .padding(16)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tile)
     }
 
     // MARK: Slim rows
@@ -272,6 +291,14 @@ struct HomeView: View {
             }
             .accessibilityIdentifier("learnCard")
         }
+        #if os(tvOS)
+        slimRow(symbol: "chart.bar", title: "Statistics", detail: "Times and streak") {
+            path.append(.stats)
+        }
+        slimRow(symbol: "gearshape", title: "Settings", detail: "Timer, rule checks") {
+            path.append(.settings)
+        }
+        #endif
     }
 
     private func slimRow(symbol: String, title: String, detail: String,
@@ -288,7 +315,7 @@ struct HomeView: View {
             .frame(minHeight: 52)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.tile)
     }
 
     private func savedLine(_ saved: SavedGame) -> String {
@@ -390,7 +417,7 @@ struct NewBoardSheet: View {
                 }
             }
             .navigationTitle("New board")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

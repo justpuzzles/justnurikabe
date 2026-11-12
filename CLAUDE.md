@@ -57,6 +57,29 @@ positioning against the siblings in `docs/DESIGN.md`). Engineering notes:
 - Persistence saves on every change; lesson steps are recorded when solved, not
   when Continue is tapped.
 
+- **Mac, Apple TV and Vision Pro (branch `multiplatform`, 2026-11-12).** One
+  target, `SDKROOT = auto`, as in Hashi and Kakuro. Platform differences go
+  through `Design/PlatformSeams.swift` (inline titles, list backgrounds,
+  `.tile`/`focusLift`, `listRowButton`, `bareButton`, `Metrics`, `VoiceOver`),
+  never scattered `#if`s in views.
+  - *Mac*: click and drag paint as on iPad; a light ring follows the pointer.
+    Keys come from an `NSEvent` monitor (`Game/BoardKeys.swift`, never
+    SwiftUI focus): arrows move a cursor, Space/Return cycle, S sea, D or .
+    dot, Delete clear. Menu bar: Undo/Redo Mark (⌘Z/⇧⌘Z), Game › Hint (⇧⌘H)
+    via `GameCommands` + `focusedSceneValue` (Mac only, `BoardActions`
+    compared by flags). Window 1100×820, min 720×620. Sandboxed
+    (`Nurikabe-macOS.entitlements`). `Theme` has an `NSColor` dynamic path.
+  - *Apple TV*: one focus stop per cell over the Canvas; Select is a tap. The
+    ring is paper outside, ink inside, so it shows on sea and land. No toolbar
+    anywhere (focus trap): Stats/Settings are Home rows, Clear joins the tools
+    (2×2, labels beside icons). List rows use `.tile` (the system's white focus
+    plate hid the chart's text). Columns ×1.5, lesson boards 640. No share.
+  - *Vision Pro*: gaze targets per cell (before the stroke gesture, so
+    pinch-drag still paints); the room is tinted glass (`Theme.ground` 0.55),
+    the chart stays opaque; borderless tools; wide window 1180×860.
+  - Icons: `Tools/AppIcon/make_platform_icons.py` (sea back layer, islands
+    front layer keyed out of the iOS icon; Mac rounded tiles).
+
 ## Build & test
 
 ```bash

@@ -58,7 +58,7 @@ struct StatsView: View {
                 }
             }
         }
-        .scrollContentBackground(.hidden)
+        .groundListBackground()
         .background(Theme.ground.ignoresSafeArea())
         .navigationTitle("Statistics")
     }

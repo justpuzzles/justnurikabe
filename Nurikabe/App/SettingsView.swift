@@ -14,8 +14,10 @@ struct SettingsView: View {
             Section {
                 Toggle("Show broken rules", isOn: $progress.settings.showRuleBreaks)
                 Toggle("Show timer", isOn: $progress.settings.showTimer)
+                #if os(iOS)
                 Toggle("Haptics", isOn: $progress.settings.hapticsEnabled)
                     .onChange(of: progress.settings.hapticsEnabled) { _, on in Haptics.enabled = on }
+                #endif
             } footer: {
                 Text("Broken rules are pools, islands with two numbers, and sea that has been cut off. They're marked in red as soon as they happen.").listHeaderText()
             }
@@ -59,7 +61,7 @@ struct SettingsView: View {
                 Text("About").listHeaderText()
 }
         }
-        .scrollContentBackground(.hidden)
+        .groundListBackground()
         .background(Theme.ground.ignoresSafeArea())
         .navigationTitle("Settings")
         .onAppear { entitlements.clearTransientState() }

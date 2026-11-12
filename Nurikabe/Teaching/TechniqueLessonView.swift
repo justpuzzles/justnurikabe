@@ -41,7 +41,7 @@ struct TechniqueLessonView: View {
         }
         .background(Theme.ground.ignoresSafeArea())
         .navigationTitle(TechniqueContent.name(technique))
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .onAppear {
             if sessions.isEmpty {
                 sessions = (LessonBoards.techniques[technique] ?? []).map { LessonSession(position: $0) }

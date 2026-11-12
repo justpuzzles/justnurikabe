@@ -1,3 +1,6 @@
+// UIKit-only: the AppKit path of `Theme.dynamic` has no trait collection to
+// resolve against here. The Mac run skips this file.
+#if canImport(UIKit)
 import Foundation
 import SwiftUI
 import Testing
@@ -79,3 +82,4 @@ private nonisolated func rgba(_ color: UIColor) -> [CGFloat] {
         #expect(theme.contains("@Sendable trait in"))
     }
 }
+#endif

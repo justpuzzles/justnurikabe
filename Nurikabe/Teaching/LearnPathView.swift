@@ -25,6 +25,7 @@ struct LearnPathView: View {
                             subtitle: ruleSubtitle(rule),
                             state: progress.completedRules.contains(rule) ? .done : unlocked ? .open : .locked)
                     }
+                    .listRowButton()
                     .disabled(!unlocked)
                     .accessibilityIdentifier("rule-\(rule.rawValue)")
                 }
@@ -46,6 +47,7 @@ struct LearnPathView: View {
                                 : !unlocked ? .locked : paid ? .paid : .open,
                             mastery: progress.masteryCount(technique))
                     }
+                    .listRowButton()
                     .disabled(!unlocked)
                     .accessibilityIdentifier("lesson-\(technique.rawValue)")
                 }
@@ -56,7 +58,7 @@ struct LearnPathView: View {
             }
             .listRowBackground(Theme.card)
         }
-        .scrollContentBackground(.hidden)
+        .groundListBackground()
         .readableColumn(720)
         .background(Theme.ground.ignoresSafeArea())
         .navigationTitle("Learn")
@@ -89,6 +91,7 @@ struct LearnPathView: View {
                         .contentShape(Rectangle())
                 }
                 .tint(Theme.accent)
+                .listRowButton()
                 .accessibilityIdentifier("continueLearning")
             } else {
                 Text("You've finished the path. These nine techniques solve every board in the game.")

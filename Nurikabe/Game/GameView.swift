@@ -49,7 +49,7 @@ struct GameView: View {
                         Spacer(minLength: 0)
                         if !game.isSolved { toolbar }
                     }
-                    .frame(maxWidth: 420)
+                    .frame(maxWidth: Metrics.isTelevision ? 640 : 420)
                     .padding(.top, 40)
                 }
                 .padding(.horizontal, 24)
@@ -77,9 +77,10 @@ struct GameView: View {
         .padding(.vertical, 10)
         .background(Theme.ground.ignoresSafeArea())
         .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
+        #if !os(tvOS)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .barTrailing) {
                 Menu {
                     Button("Clear board", systemImage: "arrow.counterclockwise") { game.restart(); save() }
                         .disabled(game.isSolved)
@@ -89,6 +90,14 @@ struct GameView: View {
                 .accessibilityLabel("More")
             }
         }
+        #endif
+        #if os(macOS)
+        // The menu bar's Undo, Redo and Hint act on this game.
+        .focusedSceneValue(\.boardActions, BoardActions(
+            canUndo: game.canUndo, undo: { game.undo(); save() },
+            canRedo: game.canRedo, redo: { game.redo(); save() },
+            canHint: !game.isSolved, hint: askHint))
+        #endif
         .onAppear {
             game.resumeClock()
             game.onCredit = { progress.credit($0) }
@@ -136,7 +145,7 @@ struct GameView: View {
                 game.endStroke()
                 save()
                 moveHaptic(satisfiedBefore: before.0, breaksBefore: before.1)
-                if let i = strokeCell, UIAccessibility.isVoiceOverRunning {
+                if let i = strokeCell, VoiceOver.isRunning {
                     announceMove(i, satisfiedBefore: before.0, breaksBefore: before.1)
                 }
                 strokeCell = nil
@@ -219,7 +228,7 @@ struct GameView: View {
             if progress.settings.showTimer {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     Text(Self.clock(game.elapsed(at: context.date)))
-                        .numberFont(17)
+                        .numberFont(Metrics.headerNumber)
                         .foregroundStyle(Theme.textSoft)
                         .accessibilityLabel("Time \(Self.spoken(game.elapsed(at: context.date)))")
                 }
@@ -229,27 +238,54 @@ struct GameView: View {
     }
 
     private var toolbar: some View {
-        HStack(spacing: 28) {
+        #if os(tvOS)
+        // Two by two, labels beside the icons: four system buttons in a row
+        // were wider than the column and wrapped their words.
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 24), GridItem(.flexible(), spacing: 24)],
+                  spacing: 24) { tools }
+        #else
+        HStack(spacing: 28) { tools }
+            .padding(.bottom, 8)
+        #endif
+    }
+
+    @ViewBuilder
+    private var tools: some View {
+        Group {
             toolButton("Undo", "arrow.uturn.backward", enabled: game.canUndo) { game.undo(); save() }
             toolButton("Redo", "arrow.uturn.forward", enabled: game.canRedo) { game.redo(); save() }
-            toolButton("Hint", "lightbulb", enabled: true) {
-                game.advanceHint(policy: FeatureGate.hintPolicy(unlocked: entitlements.isUnlocked))
-                save()
+            toolButton("Hint", "lightbulb", enabled: true, action: askHint)
+                .accessibilityIdentifier("hintButton")
+            #if os(tvOS)
+            // The toolbar's More menu is not on a television (a toolbar is a
+            // focus trap there), so Clear sits with the other tools.
+            toolButton("Clear", "arrow.counterclockwise", enabled: !game.isSolved) {
+                game.restart(); save()
             }
-            .accessibilityIdentifier("hintButton")
+            #endif
         }
-        .padding(.bottom, 8)
+    }
+
+    private func askHint() {
+        game.advanceHint(policy: FeatureGate.hintPolicy(unlocked: entitlements.isUnlocked))
+        save()
     }
 
     private func toolButton(_ label: String, _ symbol: String, enabled: Bool,
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
+            #if os(tvOS)
+            Label(label, systemImage: symbol)
+                .frame(maxWidth: .infinity)
+            #else
             VStack(spacing: 4) {
                 Image(systemName: symbol).font(.title3)
                 Text(label).font(.caption)
             }
             .frame(minWidth: 56, minHeight: 44)
+            #endif
         }
+        .bareButton()
         .disabled(!enabled)
         // textSoft, not faded further: a disabled tool still has to be
         // readable (the audit measured 0.5 × textSoft at 2.3–3.1:1).
@@ -295,6 +331,7 @@ struct GameView: View {
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Rectangle())
             }
+            .bareButton()
             .foregroundStyle(Theme.textSoft)
             .accessibilityLabel("Close hint")
         }
@@ -324,6 +361,8 @@ struct GameView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.ochreText)
             }
+            // No share sheet on Apple TV.
+            #if !os(tvOS)
             if case .daily(let day) = game.kind {
                 ShareLink(item: shareText(day)) {
                     Label("Share", systemImage: "square.and.arrow.up")
@@ -332,6 +371,7 @@ struct GameView: View {
                 .tint(Theme.accent)
                 .accessibilityLabel("Share result")
             }
+            #endif
             if !techniquesUsed.isEmpty {
                 VStack(spacing: 8) {
                     Text("This board used").font(.caption).foregroundStyle(Theme.textSoft)
@@ -397,11 +437,11 @@ struct GameView: View {
         .contentShape(Rectangle())
         if FeatureGate.isLessonAvailable(t, unlocked: entitlements.isUnlocked) {
             NavigationLink(value: Route.lesson(t)) { label }
-                .buttonStyle(.plain)
+                .buttonStyle(.tile)
                 .accessibilityHint("Opens the lesson")
         } else {
             Button { paywall.present(.advancedLessons) } label: { label }
-                .buttonStyle(.plain)
+                .buttonStyle(.tile)
         }
     }
 

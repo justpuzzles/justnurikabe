@@ -1,6 +1,8 @@
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
 /// A light/dark colour value, held as plain components rather than a
@@ -22,6 +24,12 @@ nonisolated struct ThemeRGBA: Sendable {
 private nonisolated extension UIColor {
     convenience init(_ c: ThemeRGBA) {
         self.init(red: c.red, green: c.green, blue: c.blue, alpha: c.alpha)
+    }
+}
+#elseif canImport(AppKit)
+private nonisolated extension NSColor {
+    convenience init(_ c: ThemeRGBA) {
+        self.init(srgbRed: c.red, green: c.green, blue: c.blue, alpha: c.alpha)
     }
 }
 #endif
@@ -50,7 +58,14 @@ nonisolated enum Theme {
     // MARK: - Room (follows the appearance)
 
     /// The ground everything sits on.
+    #if os(visionOS)
+    /// On Vision Pro the room is the window's glass, tinted: a solid ground
+    /// there reads as a slab hung in the air. The chart stays opaque (rule 3).
+    static let ground = dynamic(light: ThemeRGBA(0xEFEAE0, alpha: 0.55),
+                                dark: ThemeRGBA(0x14171C, alpha: 0.55))
+    #else
     static let ground = dynamic(light: ThemeRGBA(0xEFEAE0), dark: ThemeRGBA(0x14171C))
+    #endif
     /// Cards and sheets, a step off `ground`.
     static let card = dynamic(light: ThemeRGBA(0xF8F5EE), dark: ThemeRGBA(0x1E232A))
     /// Primary text.
@@ -127,6 +142,15 @@ nonisolated enum Theme {
         #if canImport(UIKit)
         Color(UIColor(dynamicProvider: { @Sendable trait in
             UIColor(trait.userInterfaceStyle == .dark ? dark : light)
+        }))
+        #elseif canImport(AppKit)
+        // The Mac: the same pair, resolved by the window's appearance (dark
+        // and the high-contrast dark variant count as dark).
+        Color(NSColor(name: nil, dynamicProvider: { @Sendable appearance in
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua,
+                                                     .accessibilityHighContrastAqua,
+                                                     .accessibilityHighContrastDarkAqua])
+            return NSColor(isDark == .darkAqua || isDark == .accessibilityHighContrastDarkAqua ? dark : light)
         }))
         #else
         Color(red: light.red, green: light.green, blue: light.blue, opacity: light.alpha)

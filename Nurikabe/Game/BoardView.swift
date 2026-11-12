@@ -41,6 +41,16 @@ struct BoardView: View {
     var onSet: ((Int, Mark) -> Void)? = nil
 
     @State private var lastIndex: Int?
+    #if os(tvOS)
+    /// The remote has no pointer: one focus stop per cell, and focus is the
+    /// cursor.
+    @FocusState private var focused: Int?
+    #endif
+    #if os(macOS)
+    /// The cell under the pointer (a light ring) and the keyboard's cursor.
+    @State private var hovered: Int?
+    @State private var cursor: Int?
+    #endif
 
     var body: some View {
         GeometryReader { geo in
@@ -53,11 +63,36 @@ struct BoardView: View {
                 }
             }
             .frame(width: side, height: side)
+            #if os(tvOS)
+            .overlay(alignment: .topLeading) { focusStops(cell: cell) }
+            #else
+            #if os(visionOS)
+            // Before the gesture, so a pinch-drag across these still paints.
+            .overlay(alignment: .topLeading) { gazeStops(cell: cell) }
+            #endif
             .contentShape(Rectangle())
             .gesture(interactive ? strokeGesture(cell: cell) : nil)
+            #endif
+            #if os(macOS)
+            .onContinuousHover { phase in
+                switch phase {
+                case .active(let point): hovered = index(at: point, cell: cell)
+                case .ended: hovered = nil
+                }
+            }
+            .overlay(alignment: .topLeading) { pointerRings(cell: cell) }
+            .macBoardKeys { key in handle(key) }
+            #endif
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
+        #if os(tvOS)
+        .onAppear {
+            // Land on a real cell: a board that opens with nothing focused
+            // makes the first press seem to do nothing.
+            if interactive, focused == nil { focused = firstOpenCell }
+        }
+        #endif
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilitySummary)
         .accessibilityIdentifier("board")
@@ -115,6 +150,105 @@ struct BoardView: View {
 
     // MARK: Input
 
+    /// What a click does, for the keyboard and the remote: a one-cell stroke.
+    private func cycle(_ i: Int) {
+        guard interactive else { return }
+        onStroke(.begin(i))
+        onStroke(.end)
+    }
+
+    /// The first cell without a number, where focus starts.
+    private var firstOpenCell: Int {
+        puzzle.clueIndexAt.firstIndex { $0 < 0 } ?? 0
+    }
+
+    #if os(tvOS)
+    /// One invisible focusable square per cell over the Canvas, which knows
+    /// nothing about focus. Select is a tap. The ring is drawn twice, paper
+    /// outside and ink inside, so it shows on sea and on land alike.
+    private func focusStops(cell: CGFloat) -> some View {
+        ForEach(0..<puzzle.size * puzzle.size, id: \.self) { i in
+            Color.clear
+                .frame(width: cell, height: cell)
+                .overlay {
+                    if focused == i && interactive {
+                        ZStack {
+                            Rectangle().strokeBorder(Theme.land, lineWidth: 7)
+                            Rectangle().strokeBorder(Theme.numeral, lineWidth: 3).padding(7)
+                        }
+                    }
+                }
+                .contentShape(Rectangle())
+                .focusable(interactive)
+                .focused($focused, equals: i)
+                .onTapGesture { cycle(i) }
+                .offset(x: CGFloat(i % puzzle.size) * cell, y: CGFloat(i / puzzle.size) * cell)
+                .accessibilityHidden(true)
+        }
+    }
+    #endif
+
+    #if os(visionOS)
+    /// One gaze target per cell, so the cell under the eyes highlights. No
+    /// gesture of their own: the board's stroke gesture sees through them.
+    private func gazeStops(cell: CGFloat) -> some View {
+        ForEach(0..<puzzle.size * puzzle.size, id: \.self) { i in
+            Color.clear
+                .frame(width: cell, height: cell)
+                .contentShape(.hoverEffect, Rectangle())
+                .hoverEffect(.highlight)
+                .offset(x: CGFloat(i % puzzle.size) * cell, y: CGFloat(i / puzzle.size) * cell)
+                .accessibilityHidden(true)
+        }
+    }
+    #endif
+
+    #if os(macOS)
+    /// A light ring under the pointer, a firm one on the keyboard's cursor.
+    @ViewBuilder
+    private func pointerRings(cell: CGFloat) -> some View {
+        if interactive {
+            ZStack(alignment: .topLeading) {
+                if let hovered, hovered != cursor {
+                    Rectangle().strokeBorder(Theme.numeral.opacity(0.35), lineWidth: 2)
+                        .frame(width: cell, height: cell)
+                        .offset(x: CGFloat(hovered % puzzle.size) * cell, y: CGFloat(hovered / puzzle.size) * cell)
+                }
+                if let cursor {
+                    ZStack {
+                        Rectangle().strokeBorder(Theme.land, lineWidth: 5)
+                        Rectangle().strokeBorder(Theme.numeral, lineWidth: 2).padding(5)
+                    }
+                    .frame(width: cell, height: cell)
+                    .offset(x: CGFloat(cursor % puzzle.size) * cell, y: CGFloat(cursor / puzzle.size) * cell)
+                }
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    /// Arrows move the cursor, Space or Return cycles its cell, S/D/Delete
+    /// set it (where the caller allows setting; lessons judge every tap and
+    /// offer only the cycle).
+    private func handle(_ key: BoardKey) -> Bool {
+        guard interactive else { return false }
+        switch key {
+        case .move(let dRow, let dCol):
+            cursor = BoardKey.moved(cursor ?? hovered, dRow: dRow, dCol: dCol, size: puzzle.size)
+        case .cycle:
+            guard let i = cursor ?? hovered else { cursor = firstOpenCell; return true }
+            cursor = i
+            cycle(i)
+        case .set(let mark):
+            guard let onSet, let i = cursor ?? hovered, puzzle.clueIndexAt[i] < 0 else { return false }
+            cursor = i
+            onSet(i, mark)
+        }
+        return true
+    }
+    #endif
+
+    #if !os(tvOS)
     private func strokeGesture(cell: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .local)
             .onChanged { value in
@@ -132,6 +266,7 @@ struct BoardView: View {
                 lastIndex = nil
             }
     }
+    #endif
 
     private func index(at point: CGPoint, cell: CGFloat) -> Int? {
         let c = Int(point.x / cell), r = Int(point.y / cell)
